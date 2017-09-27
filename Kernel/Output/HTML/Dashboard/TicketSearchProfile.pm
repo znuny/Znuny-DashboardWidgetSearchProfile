@@ -1646,6 +1646,33 @@ sub _SearchParamsGet {
         UserLogin => $UserLogin,
     );
 
+    my @CurrentSearchProfiles;
+    my %TicketSearchSummary;
+    PROFILE:
+    for my $SearchProfileName ( sort keys %SearchProfiles ) {
+
+        my %CurrentSearchProfile = $SearchProfileObject->SearchProfileGet(
+            Base      => 'TicketSearch',
+            Name      => $SearchProfileName,
+            UserLogin => $UserLogin,
+        );
+        next PROFILE if !%CurrentSearchProfile;
+        next PROFILE if !$CurrentSearchProfile{Znuny4OTRSSaveDashboard};
+
+        # prepare full text search
+        if ( $CurrentSearchProfile{Fulltext} ) {
+            $CurrentSearchProfile{ContentSearch} = 'OR';
+            for my $Key (qw(From To Cc Subject Body)) {
+                $CurrentSearchProfile{$Key} = $CurrentSearchProfile{Fulltext};
+            }
+        }
+
+        $TicketSearchSummary{ $SearchProfileName } = \%CurrentSearchProfile;
+
+        # save profile name for cache check
+        push @CurrentSearchProfiles, $SearchProfileName;
+    }
+
     # check cache
     my $Summary = $CacheObject->Get(
         Type => 'Dashboard',
@@ -1657,7 +1684,6 @@ sub _SearchParamsGet {
     if ( IsHashRefWithData($Summary) ) {
 
         my @CachedSearchProfiles  = grep { $_ !~ m{::Selected\z}xms } sort keys %{ $Summary };
-        my @CurrentSearchProfiles = sort keys %SearchProfiles;
 
         my $CacheDiffers = DataIsDifferent(
             Data1 => \@CachedSearchProfiles,
@@ -1671,28 +1697,6 @@ sub _SearchParamsGet {
                 Key  => $Self->{CacheKey} . '-Summary',
             );
         }
-    }
-
-    my %TicketSearchSummary;
-    PROFILE:
-    for my $SearchProfileName ( sort keys %SearchProfiles ) {
-
-        my %CurrentSearchProfile = $SearchProfileObject->SearchProfileGet(
-            Base      => 'TicketSearch',
-            Name      => $SearchProfileName,
-            UserLogin => $UserLogin,
-        );
-        next PROFILE if !$CurrentSearchProfile{Znuny4OTRSSaveDashboard};
-
-        # prepare full text search
-        if ( $CurrentSearchProfile{Fulltext} ) {
-            $CurrentSearchProfile{ContentSearch} = 'OR';
-            for my $Key (qw(From To Cc Subject Body)) {
-                $CurrentSearchProfile{$Key} = $CurrentSearchProfile{Fulltext};
-            }
-        }
-
-        $TicketSearchSummary{ $SearchProfileName } = \%CurrentSearchProfile;
     }
 # ---
 
