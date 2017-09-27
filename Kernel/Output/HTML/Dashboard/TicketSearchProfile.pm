@@ -91,6 +91,9 @@ sub Run {
     my %TicketSearch        = %{ $SearchParams{TicketSearch} };
     my %TicketSearchSummary = %{ $SearchParams{TicketSearchSummary} };
 
+    if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
+        $Self->{Filter} = 'last-search';
+    }
 # ---
 
     # get cache object
