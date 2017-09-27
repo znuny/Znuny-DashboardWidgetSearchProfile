@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # Copyright (C) 2012-2017 Znuny GmbH, http://znuny.com/
 # --
-# $origin: https://github.com/OTRS/otrs/blob/9c721b567973de944f2d0c20ded07fd092396c82/Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
+# $origin: otrs - 9c721b567973de944f2d0c20ded07fd092396c82 - Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
