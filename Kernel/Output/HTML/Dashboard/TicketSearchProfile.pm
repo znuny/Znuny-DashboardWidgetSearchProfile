@@ -2,12 +2,13 @@
 # Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # Copyright (C) 2012-2017 Znuny GmbH, http://znuny.com/
 # --
-# $origin: https://github.com/OTRS/otrs/blob/c7771de920c53a313eadda0a954c7bc7a8a48477/Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: otrs - c7771de920c53a313eadda0a954c7bc7a8a48477 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
+## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::ObjectManagerDirectCall)
 
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
@@ -1320,14 +1321,24 @@ sub _SearchParamsGet {
         )
     {
         @Columns = grep { $Self->{Config}->{DefaultColumns}->{$_} eq '2' }
-            sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+#             sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
+            sort { $Self->_DefaultColumnSortTicketSearchProfile() } keys %{ $Self->{Config}->{DefaultColumns} };
+# ---
     }
     if ($PreferencesColumn) {
         if ( $PreferencesColumn->{Columns} && %{ $PreferencesColumn->{Columns} } ) {
             @Columns = grep {
                 defined $PreferencesColumn->{Columns}->{$_}
                     && $PreferencesColumn->{Columns}->{$_} eq '1'
-            } sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+#             } sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
+            } sort { $Self->_DefaultColumnSortTicketSearchProfile() } keys %{ $Self->{Config}->{DefaultColumns} };
+# ---
         }
         if ( $PreferencesColumn->{Order} && @{ $PreferencesColumn->{Order} } ) {
             @Columns = @{ $PreferencesColumn->{Order} };
@@ -1660,6 +1671,7 @@ sub _SearchParamsGet {
     }
 
     my %TicketSearchSummary;
+    PROFILE:
     for my $SearchProfileName ( sort keys %SearchProfiles ) {
 
         my %CurrentSearchProfile = $SearchProfileObject->SearchProfileGet(
@@ -1667,6 +1679,7 @@ sub _SearchParamsGet {
             Name      => $SearchProfileName,
             UserLogin => $UserLogin,
         );
+        next PROFILE if !$CurrentSearchProfile{Znuny4OTRSSaveDashboard};
 
         # prepare full text search
         if ( $CurrentSearchProfile{Fulltext} ) {
@@ -1678,7 +1691,6 @@ sub _SearchParamsGet {
 
         $TicketSearchSummary{ $SearchProfileName } = \%CurrentSearchProfile;
     }
-
 # ---
 
     return (
@@ -1687,6 +1699,67 @@ sub _SearchParamsGet {
         TicketSearchSummary => \%TicketSearchSummary,
     );
 }
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+# i can not explain why but in case of inherited sort functions
+# we get in trouble with undefined sort params $a and $b.
+# so i copied the _DefaultColumnSort function and renamed it to
+# prevent inherited stuff and then it works.
+
+sub _DefaultColumnSortTicketSearchProfile {
+    my ( $Self, %Param ) = @_;
+
+    my %DefaultColumns = (
+        TicketNumber           => 100,
+        Age                    => 110,
+        Changed                => 111,
+        PendingTime            => 112,
+        EscalationTime         => 113,
+        EscalationSolutionTime => 114,
+        EscalationResponseTime => 115,
+        EscalationUpdateTime   => 116,
+        Title                  => 120,
+        State                  => 130,
+        Lock                   => 140,
+        Queue                  => 150,
+        Owner                  => 160,
+        Responsible            => 161,
+        CustomerID             => 170,
+        CustomerName           => 171,
+        CustomerUserID         => 172,
+        Type                   => 180,
+        Service                => 191,
+        SLA                    => 192,
+        Priority               => 193,
+    );
+
+    # set default order of ProcessManagement columns (for process widgets)
+    if ( $Self->{Config}->{IsProcessWidget} ) {
+        $DefaultColumns{"DynamicField_$Self->{ProcessManagementProcessID}"}  = 101;
+        $DefaultColumns{"DynamicField_$Self->{ProcessManagementActivityID}"} = 102;
+    }
+
+    # dynamic fields can not be on the DefaultColumns sorting hash
+    # when comparing 2 dynamic fields sorting must be alphabetical
+    if ( !$DefaultColumns{$a} && !$DefaultColumns{$b} ) {
+        return $a cmp $b;
+    }
+
+    # when a dynamic field is compared to a ticket attribute it must be higher
+    elsif ( !$DefaultColumns{$a} ) {
+        return 1;
+    }
+
+    # when a ticket attribute is compared to a dynamic field it must be lower
+    elsif ( !$DefaultColumns{$b} ) {
+        return -1;
+    }
+
+    # otherwise do a numerical comparison with the ticket attributes
+    return $DefaultColumns{$a} <=> $DefaultColumns{$b};
+}
+# ---
 
 1;
 

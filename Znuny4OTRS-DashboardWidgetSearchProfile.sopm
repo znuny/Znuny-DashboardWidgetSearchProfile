@@ -10,9 +10,13 @@
     <Description Lang="en">This package contains the functionality to display a search profile widget in the overview.</Description>
     <Description Lang="de">Dieses Paket enthält die Funktionalität um ein Suchvorlagen Widget in der Übersicht anzuzeigen.</Description>
     <Filelist>
+        <File Permission="644" Location="Custom/Kernel/System/SearchProfile.pm"/>
         <File Permission="644" Location="Kernel/Config/Files/Znuny4OTRSDashboardWidgetSearchProfile.xml"/>
         <File Permission="644" Location="Kernel/Language/de_Znuny4OTRSDashboardWidgetSearchProfile.pm"/>
         <File Permission="644" Location="Kernel/Output/HTML/Dashboard/TicketSearchProfile.pm"/>
+        <File Permission="644" Location="Kernel/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile.pm"/>
         <File Permission="644" Location="Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketSearchProfile.tt"/>
+        <File Permission="644" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/SearchProfile.t"/>
+        <File Permission="644" Location="var/httpd/htdocs/js/Core.Agent.Search.js"/>
     </Filelist>
 </otrs_package>
