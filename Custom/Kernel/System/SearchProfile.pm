@@ -1,12 +1,12 @@
 # --
-# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
-# Copyright (C) 2012-2017 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
+# Copyright (C) 2012-2018 Znuny GmbH, http://znuny.com/
 # --
-# $origin: otrs - be4010f3365da552dcfd079c36ad31cc90e06c32 - Kernel/System/SearchProfile.pm
+# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/System/SearchProfile.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
 ## nofilter(TidyAll::Plugin::OTRS::Perl::ParamObject)
 
@@ -42,22 +42,16 @@ our @ObjectDependencies = (
 
 Kernel::System::SearchProfile - module to manage search profiles
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 module with all functions to manage search profiles
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $SearchProfileObject = $Kernel::OM->Get('Kernel::System::SearchProfile');
 
 =cut
@@ -69,21 +63,19 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
-
     $Self->{CacheType} = 'SearchProfile';
     $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     # set lower if database is case sensitive
     $Self->{Lower} = '';
-    if ( $Self->{DBObject}->GetDatabaseFunction('CaseSensitive') ) {
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
         $Self->{Lower} = 'LOWER';
     }
 
     return $Self;
 }
 
-=item SearchProfileAdd()
+=head2 SearchProfileAdd()
 
 to add a search profile item
 
@@ -105,7 +97,7 @@ sub SearchProfileAdd {
         if ( !defined $Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -135,9 +127,12 @@ sub SearchProfileAdd {
         $Param{Type} = 'SCALAR';
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     for my $Value (@Data) {
 
-        return if !$Self->{DBObject}->Do(
+        return if !$DBObject->Do(
             SQL => "
                 INSERT INTO search_profile
                 (login, profile_name,  profile_type, profile_key, profile_value)
@@ -249,7 +244,7 @@ sub SearchProfileAdd {
     return 1;
 }
 
-=item SearchProfileGet()
+=head2 SearchProfileGet()
 
 returns hash with search profile.
 
@@ -269,7 +264,7 @@ sub SearchProfileGet {
         if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -286,8 +281,11 @@ sub SearchProfileGet {
     );
     return %{$Cache} if $Cache;
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # get search profile
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => "
             SELECT profile_type, profile_key, profile_value
             FROM search_profile
@@ -298,7 +296,7 @@ sub SearchProfileGet {
     );
 
     my %Result;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         if ( $Data[0] eq 'ARRAY' ) {
             push @{ $Result{ $Data[1] } }, $Data[2];
         }
@@ -329,7 +327,7 @@ sub SearchProfileGet {
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 
-=item SearchProfileGroupList()
+=head2 SearchProfileGroupList()
 
 returns hash with search profile parameter for SearchProfileGet.
 
@@ -345,6 +343,7 @@ sub SearchProfileGroupList {
 
     my $UserObject  = $Kernel::OM->Get('Kernel::System::User');
     my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    my $DBObject    = $Kernel::OM->Get('Kernel::System::DB');
 
     # check needed stuff
     NEEDED:
@@ -372,7 +371,7 @@ sub SearchProfileGroupList {
 
     my @GroupListQuoted;
     for my $Group (@UserGroups) {
-        push @GroupListQuoted, $Self->{DBObject}->Quote($Group);
+        push @GroupListQuoted, $DBObject->Quote($Group);
     }
 
     my $GroupListComma = "'" . join("','", @GroupListQuoted) . "'";
@@ -389,20 +388,20 @@ sub SearchProfileGroupList {
         login LIKE ?
 ZNUUNY
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => $SQLGroups,
         Bind => [ \$SQLBase ],
     );
 
     my %Result;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         $Result{ $Data[0] } = $Data[0];
     }
 
     return %Result;
 }
 
-=item SearchProfileGroupParamGet()
+=head2 SearchProfileGroupParamGet()
 
 returns hash with search profile parameter for SearchProfileGet.
 
@@ -419,6 +418,7 @@ sub SearchProfileGroupParamGet {
 
     my $UserObject  = $Kernel::OM->Get('Kernel::System::User');
     my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    my $DBObject    = $Kernel::OM->Get('Kernel::System::DB');
 
     # check needed stuff
     NEEDED:
@@ -446,7 +446,7 @@ sub SearchProfileGroupParamGet {
 
     my @GroupListQuoted;
     for my $Group (@UserGroups) {
-        push @GroupListQuoted, $Self->{DBObject}->Quote($Group);
+        push @GroupListQuoted, $DBObject->Quote($Group);
     }
 
     my $GroupListComma = "'" . join("','", @GroupListQuoted) . "'";
@@ -464,13 +464,13 @@ sub SearchProfileGroupParamGet {
         login LIKE ?
 ZNUUNY
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => $SQLGroups,
         Bind => [ \$Param{Name}, \$SQLBase ],
     );
 
     my $Login;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         $Login = $Data[0];
     }
     return if !$Login;
@@ -485,7 +485,7 @@ ZNUUNY
     );
 }
 
-=item SearchProfileGroupGet()
+=head2 SearchProfileGroupGet()
 
 returns hash with search profile.
 
@@ -509,7 +509,7 @@ sub SearchProfileGroupGet {
 }
 # ---
 
-=item SearchProfileDelete()
+=head2 SearchProfileDelete()
 
 deletes a search profile.
 
@@ -534,7 +534,7 @@ sub SearchProfileDelete {
         if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -557,11 +557,14 @@ sub SearchProfileDelete {
     # create login string
     my $Login = $Param{Base} . '::' . $Param{UserLogin};
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # delete search profile
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#     return if !$Self->{DBObject}->Do(
+#     return if !$DBObject->Do(
 #         SQL => "
 #             DELETE
 #             FROM search_profile
@@ -572,7 +575,7 @@ sub SearchProfileDelete {
 #     );
 
     if ( $Param{Key} ) {
-        return if !$Self->{DBObject}->Do(
+        return if !$DBObject->Do(
             SQL => "
                 DELETE
                 FROM search_profile
@@ -584,7 +587,7 @@ sub SearchProfileDelete {
         );
     }
     else {
-        return if !$Self->{DBObject}->Do(
+        return if !$DBObject->Do(
             SQL => "
                 DELETE
                 FROM search_profile
@@ -619,7 +622,7 @@ sub SearchProfileDelete {
     return 1;
 }
 
-=item SearchProfileList()
+=head2 SearchProfileList()
 
 returns a hash of all profiles for the given user.
 
@@ -638,7 +641,7 @@ sub SearchProfileList {
         if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -653,8 +656,11 @@ sub SearchProfileList {
     );
     return %{$Cache} if $Cache;
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # get search profile list
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => "
             SELECT profile_name
             FROM search_profile
@@ -665,7 +671,7 @@ sub SearchProfileList {
 
     # fetch the result
     my %Result;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         $Result{ $Data[0] } = $Data[0];
     }
 # ---
@@ -682,10 +688,11 @@ sub SearchProfileList {
         Key   => $Login,
         Value => \%Result,
     );
+
     return %Result;
 }
 
-=item SearchProfileUpdateUserLogin()
+=head2 SearchProfileUpdateUserLogin()
 
 changes the UserLogin of SearchProfiles
 
@@ -705,7 +712,7 @@ sub SearchProfileUpdateUserLogin {
         if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -743,18 +750,18 @@ sub SearchProfileUpdateUserLogin {
             UserLogin => $Param{UserLogin},
         );
     }
+
+    return 1;
 }
 
 1;
 
-=back
-
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (L<https://otrs.org/>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see L<https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 =cut

@@ -1,12 +1,12 @@
 # --
-# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
-# Copyright (C) 2012-2017 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
+# Copyright (C) 2012-2018 Znuny GmbH, http://znuny.com/
 # --
-# $origin: otrs - c7771de920c53a313eadda0a954c7bc7a8a48477 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
 ## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::ObjectManagerDirectCall)
 
@@ -15,8 +15,6 @@
 # ---
 # package Kernel::Output::HTML::Dashboard::TicketGeneric;
 package Kernel::Output::HTML::Dashboard::TicketSearchProfile;
-
-use base qw( Kernel::Output::HTML::Dashboard::TicketGeneric );
 # ---
 
 use strict;
@@ -27,77 +25,664 @@ use Kernel::Language qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
 
-sub Run {
-    my ( $Self, %Param ) = @_;
+sub new {
+    my ( $Type, %Param ) = @_;
 
-# ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
-# ---
-#     my %SearchParams        = $Self->_SearchParamsGet(%Param);
-#     my @Columns             = @{ $SearchParams{Columns} };
-#     my %TicketSearch        = %{ $SearchParams{TicketSearch} };
-#     my %TicketSearchSummary = %{ $SearchParams{TicketSearchSummary} };
-#
-#     my $CacheKey = join '-', $Self->{Name},
-#         $Self->{Action},
-#         $Self->{PageShown},
-#         $Self->{StartHit},
-#         $Self->{UserID};
-#     my $CacheColumns = join(
-#         ',',
-#         map {
-#             $_ . '=>' . $Self->{GetColumnFilterSelect}->{$_}
-#             }
-#             sort keys %{ $Self->{GetColumnFilterSelect} }
-#     );
-#     $CacheKey .= '-' . $CacheColumns if $CacheColumns;
-#
-#     $CacheKey .= '-' . $Self->{SortBy}  if defined $Self->{SortBy};
-#     $CacheKey .= '-' . $Self->{OrderBy} if defined $Self->{OrderBy};
-#
-#     # CustomerInformationCenter shows data per CustomerID
-#     if ( $Param{CustomerID} ) {
-#         $CacheKey .= '-' . $Param{CustomerID};
-#     }
-#
-    my $CacheKey = join '-', $Self->{Name},
-        $Self->{Action},
-        $Self->{PageShown},
-        $Self->{StartHit},
-        $Self->{UserID};
-    my $CacheColumns = join(
-        ',',
-        map {
-            $_ . '=>' . $Self->{GetColumnFilterSelect}->{$_}
-            }
-            sort keys %{ $Self->{GetColumnFilterSelect} }
-    );
-    $CacheKey .= '-' . $CacheColumns if $CacheColumns;
+    # allocate new hash for object
+    my $Self = {%Param};
+    bless( $Self, $Type );
 
-    $CacheKey .= '-' . $Self->{SortBy}  if defined $Self->{SortBy};
-    $CacheKey .= '-' . $Self->{OrderBy} if defined $Self->{OrderBy};
-
-    # CustomerInformationCenter shows data per CustomerID
-    if ( $Param{CustomerID} ) {
-        $CacheKey .= '-' . $Param{CustomerID};
+    # get needed parameters
+    for my $Needed (qw(Config Name UserID)) {
+        die "Got no $Needed!" if ( !$Self->{$Needed} );
     }
 
-    # store the CacheKey in Self so we can use
-    # it in the check for changed SearchProfiles
-    $Self->{CacheKey} = $CacheKey;
+    # get param object
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my $RemoveFilters = $ParamObject->GetParam( Param => 'RemoveFilters' ) || $Param{RemoveFilters} || 0;
+
+    # get sorting params
+    for my $Item (qw(SortBy OrderBy)) {
+        $Self->{$Item} = $ParamObject->GetParam( Param => $Item ) || $Param{$Item};
+    }
+
+    # Get add filters param.
+    $Self->{AddFilters} = $ParamObject->GetParam( Param => 'AddFilters' ) || $Param{AddFilters} || 0;
+    $Self->{TabAction}  = $ParamObject->GetParam( Param => 'TabAction' )  || $Param{TabAction}  || 0;
+
+    # Get previous sorting column.
+    $Self->{SortingColumn} = $ParamObject->GetParam( Param => 'SortingColumn' ) || $Param{SortingColumn};
+
+    # set filter settings
+    for my $Item (qw(ColumnFilter GetColumnFilter GetColumnFilterSelect)) {
+        $Self->{$Item} = $Param{$Item};
+    }
+
+    # save column filters
+    $Self->{PrefKeyColumnFilters}         = 'UserDashboardTicketGenericColumnFilters' . $Self->{Name};
+    $Self->{PrefKeyColumnFiltersRealKeys} = 'UserDashboardTicketGenericColumnFiltersRealKeys' . $Self->{Name};
+
+    # get needed objects
+    my $JSONObject   = $Kernel::OM->Get('Kernel::System::JSON');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $UserObject   = $Kernel::OM->Get('Kernel::System::User');
+
+    if ($RemoveFilters) {
+        $UserObject->SetPreferences(
+            UserID => $Self->{UserID},
+            Key    => $Self->{PrefKeyColumnFilters},
+            Value  => '',
+        );
+        $UserObject->SetPreferences(
+            UserID => $Self->{UserID},
+            Key    => $Self->{PrefKeyColumnFiltersRealKeys},
+            Value  => '',
+        );
+    }
+
+    # just in case new filter values arrive
+    elsif (
+        IsHashRefWithData( $Self->{GetColumnFilter} )
+        && IsHashRefWithData( $Self->{GetColumnFilterSelect} )
+        && IsHashRefWithData( $Self->{ColumnFilter} )
+        )
+    {
+
+        if ( !$ConfigObject->Get('DemoSystem') ) {
+
+            # check if the user has filter preferences for this widget
+            my %Preferences = $UserObject->GetPreferences(
+                UserID => $Self->{UserID},
+            );
+            my $ColumnPrefValues;
+            if ( $Preferences{ $Self->{PrefKeyColumnFilters} } ) {
+                $ColumnPrefValues = $JSONObject->Decode(
+                    Data => $Preferences{ $Self->{PrefKeyColumnFilters} },
+                );
+            }
+
+            PREFVALUES:
+            for my $Column ( sort keys %{ $Self->{GetColumnFilterSelect} } ) {
+                if ( $Self->{GetColumnFilterSelect}->{$Column} eq 'DeleteFilter' ) {
+                    delete $ColumnPrefValues->{$Column};
+                    next PREFVALUES;
+                }
+                $ColumnPrefValues->{$Column} = $Self->{GetColumnFilterSelect}->{$Column};
+            }
+
+            $UserObject->SetPreferences(
+                UserID => $Self->{UserID},
+                Key    => $Self->{PrefKeyColumnFilters},
+                Value  => $JSONObject->Encode( Data => $ColumnPrefValues ),
+            );
+
+            # save real key's name
+            my $ColumnPrefRealKeysValues;
+            if ( $Preferences{ $Self->{PrefKeyColumnFiltersRealKeys} } ) {
+                $ColumnPrefRealKeysValues = $JSONObject->Decode(
+                    Data => $Preferences{ $Self->{PrefKeyColumnFiltersRealKeys} },
+                );
+            }
+            REALKEYVALUES:
+            for my $Column ( sort keys %{ $Self->{ColumnFilter} } ) {
+                next REALKEYVALUES if !$Column;
+
+                my $DeleteFilter = 0;
+                if ( IsArrayRefWithData( $Self->{ColumnFilter}->{$Column} ) ) {
+                    if ( grep { $_ eq 'DeleteFilter' } @{ $Self->{ColumnFilter}->{$Column} } ) {
+                        $DeleteFilter = 1;
+                    }
+                }
+                elsif ( IsHashRefWithData( $Self->{ColumnFilter}->{$Column} ) ) {
+
+                    if (
+                        grep { $Self->{ColumnFilter}->{$Column}->{$_} eq 'DeleteFilter' }
+                        keys %{ $Self->{ColumnFilter}->{$Column} }
+                        )
+                    {
+                        $DeleteFilter = 1;
+                    }
+                }
+
+                if ($DeleteFilter) {
+                    delete $ColumnPrefRealKeysValues->{$Column};
+                    delete $Self->{ColumnFilter}->{$Column};
+                    next REALKEYVALUES;
+                }
+                $ColumnPrefRealKeysValues->{$Column} = $Self->{ColumnFilter}->{$Column};
+            }
+            $UserObject->SetPreferences(
+                UserID => $Self->{UserID},
+                Key    => $Self->{PrefKeyColumnFiltersRealKeys},
+                Value  => $JSONObject->Encode( Data => $ColumnPrefRealKeysValues ),
+            );
+
+        }
+    }
+
+    # check if the user has filter preferences for this widget
+    my %Preferences = $UserObject->GetPreferences(
+        UserID => $Self->{UserID},
+    );
+
+    # get column names from Preferences
+    my $PreferencesColumnFilters;
+    if ( $Preferences{ $Self->{PrefKeyColumnFilters} } ) {
+        $PreferencesColumnFilters = $JSONObject->Decode(
+            Data => $Preferences{ $Self->{PrefKeyColumnFilters} },
+        );
+    }
+
+    if ($PreferencesColumnFilters) {
+        $Self->{GetColumnFilterSelect} = $PreferencesColumnFilters;
+        my @ColumnFilters = keys %{$PreferencesColumnFilters};    ## no critic
+        for my $Field (@ColumnFilters) {
+            $Self->{GetColumnFilter}->{ $Field . $Self->{Name} } = $PreferencesColumnFilters->{$Field};
+        }
+    }
+
+    # get column real names from Preferences
+    my $PreferencesColumnFiltersRealKeys;
+    if ( $Preferences{ $Self->{PrefKeyColumnFiltersRealKeys} } ) {
+        $PreferencesColumnFiltersRealKeys = $JSONObject->Decode(
+            Data => $Preferences{ $Self->{PrefKeyColumnFiltersRealKeys} },
+        );
+    }
+
+    if ($PreferencesColumnFiltersRealKeys) {
+        my @ColumnFiltersReal = keys %{$PreferencesColumnFiltersRealKeys};    ## no critic
+        for my $Field (@ColumnFiltersReal) {
+            $Self->{ColumnFilter}->{$Field} = $PreferencesColumnFiltersRealKeys->{$Field};
+        }
+    }
+
+    # get current filter
+    my $Name                     = $ParamObject->GetParam( Param => 'Name' ) || '';
+    my $PreferencesKey           = 'UserDashboardTicketGenericFilter' . $Self->{Name};
+    my $AdditionalPreferencesKey = 'UserDashboardTicketGenericAdditionalFilter' . $Self->{Name};
+    if ( $Self->{Name} eq $Name ) {
+        $Self->{Filter}           = $ParamObject->GetParam( Param => 'Filter' )           || '';
+        $Self->{AdditionalFilter} = $ParamObject->GetParam( Param => 'AdditionalFilter' ) || '';
+    }
+
+    # Remember the selected filter in the session.
+    if ( $Self->{Filter} ) {
+
+        # update session
+        $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+            SessionID => $Self->{SessionID},
+            Key       => $PreferencesKey,
+            Value     => $Self->{Filter},
+        );
+
+        # update preferences
+        if ( !$ConfigObject->Get('DemoSystem') ) {
+            $UserObject->SetPreferences(
+                UserID => $Self->{UserID},
+                Key    => $PreferencesKey,
+                Value  => $Self->{Filter},
+            );
+        }
+    }
+    else {
+        $Self->{Filter} = $Self->{$PreferencesKey} || $Self->{Config}->{Filter} || 'All';
+    }
+
+    # The additional filter are at the moment only relevant for the customer user information center.
+    if ( $Self->{Action} eq 'AgentCustomerUserInformationCenter' ) {
+
+        # Remember the selected filter in the session.
+        if ( $Self->{AdditionalFilter} ) {
+
+            # update session
+            $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+                SessionID => $Self->{SessionID},
+                Key       => $AdditionalPreferencesKey,
+                Value     => $Self->{AdditionalFilter},
+            );
+
+            # update preferences
+            if ( !$ConfigObject->Get('DemoSystem') ) {
+                $UserObject->SetPreferences(
+                    UserID => $Self->{UserID},
+                    Key    => $AdditionalPreferencesKey,
+                    Value  => $Self->{AdditionalFilter},
+                );
+            }
+        }
+        else {
+            $Self->{AdditionalFilter}
+                = $Self->{$AdditionalPreferencesKey} || $Self->{Config}->{AdditionalFilter} || 'AssignedToCustomerUser';
+        }
+    }
+
+    $Self->{PrefKeyShown}   = 'UserDashboardPref' . $Self->{Name} . '-Shown';
+    $Self->{PrefKeyColumns} = 'UserDashboardPref' . $Self->{Name} . '-Columns';
+    $Self->{PageShown}      = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->{ $Self->{PrefKeyShown} }
+        || $Self->{Config}->{Limit};
+    $Self->{StartHit} = int( $ParamObject->GetParam( Param => 'StartHit' ) || 1 );
+
+    # define filterable columns
+    $Self->{ValidFilterableColumns} = {
+        'Owner'          => 1,
+        'Responsible'    => 1,
+        'CustomerID'     => 1,
+        'CustomerUserID' => 1,
+        'State'          => 1,
+        'Queue'          => 1,
+        'Priority'       => 1,
+        'Type'           => 1,
+        'Lock'           => 1,
+        'Service'        => 1,
+        'SLA'            => 1,
+    };
+
+    # hash with all valid sortable columns (taken from TicketSearch)
+    # SortBy  => 'Age',   # Created|Owner|Responsible|CustomerID|State|TicketNumber|Queue
+    # |Priority|Type|Lock|Title|Service|SLA|Changed|PendingTime|EscalationTime
+    # | EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    $Self->{ValidSortableColumns} = {
+        'Age'                    => 1,
+        'Created'                => 1,
+        'Owner'                  => 1,
+        'Responsible'            => 1,
+        'CustomerID'             => 1,
+        'State'                  => 1,
+        'TicketNumber'           => 1,
+        'Queue'                  => 1,
+        'Priority'               => 1,
+        'Type'                   => 1,
+        'Lock'                   => 1,
+        'Title'                  => 1,
+        'Service'                => 1,
+        'Changed'                => 1,
+        'SLA'                    => 1,
+        'PendingTime'            => 1,
+        'EscalationTime'         => 1,
+        'EscalationUpdateTime'   => 1,
+        'EscalationResponseTime' => 1,
+        'EscalationSolutionTime' => 1,
+    };
+
+    # remove CustomerID if Customer Information Center
+    if ( $Self->{Action} eq 'AgentCustomerInformationCenter' ) {
+        delete $Self->{ColumnFilter}->{CustomerID};
+        delete $Self->{GetColumnFilter}->{CustomerID};
+        delete $Self->{GetColumnFilterSelect}->{CustomerID};
+        delete $Self->{ValidFilterableColumns}->{CustomerID};
+        delete $Self->{ValidSortableColumns}->{CustomerID};
+    }
+    elsif (
+        $Self->{Action} eq 'AgentCustomerUserInformationCenter'
+        && $Self->{AdditionalFilter} eq 'AssignedToCustomerUser'
+        )
+    {
+
+        for my $DeleteColumnFilter (qw(CustomerUserLogin CustomerUserLoginRaw)) {
+            delete $Self->{ColumnFilter}->{$DeleteColumnFilter};
+            delete $Self->{GetColumnFilter}->{$DeleteColumnFilter};
+        }
+        delete $Self->{GetColumnFilter}->{CustomerUserID};
+        delete $Self->{GetColumnFilterSelect}->{CustomerUserID};
+        delete $Self->{ValidFilterableColumns}->{CustomerUserID};
+    }
+
+    $Self->{UseTicketService} = $ConfigObject->Get('Ticket::Service') || 0;
+
+    if ( $Self->{Config}->{IsProcessWidget} ) {
+
+        # get process management configuration
+        $Self->{ProcessManagementProcessID}
+            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementProcessID');
+        $Self->{ProcessManagementActivityID}
+            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementActivityID');
+
+        # get the list of processes in the system
+        my $ProcessListHash = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessList(
+            ProcessState => [ 'Active', 'FadeAway', 'Inactive' ],
+            Interface    => 'all',
+            Silent       => 1,
+        );
+
+        # use only the process EntityIDs
+        @{ $Self->{ProcessList} } = sort keys %{$ProcessListHash};
+    }
+
+    return $Self;
+}
+
+sub Preferences {
+    my ( $Self, %Param ) = @_;
+
+    # configure columns
+    my @ColumnsEnabled;
+    my @ColumnsAvailable;
+    my @ColumnsAvailableNotEnabled;
+
+    # check for default settings
+    if (
+        $Self->{Config}->{DefaultColumns}
+        && IsHashRefWithData( $Self->{Config}->{DefaultColumns} )
+        )
+    {
+        @ColumnsAvailable = grep { $Self->{Config}->{DefaultColumns}->{$_} }
+            keys %{ $Self->{Config}->{DefaultColumns} };
+        @ColumnsEnabled = grep { $Self->{Config}->{DefaultColumns}->{$_} eq '2' }
+            sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
+    }
+
+    # check if the user has filter preferences for this widget
+    my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
+        UserID => $Self->{UserID},
+    );
+
+    # get JSON object
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+
+    # if preference settings are available, take them
+    if ( $Preferences{ $Self->{PrefKeyColumns} } ) {
+
+        my $ColumnsEnabled = $JSONObject->Decode(
+            Data => $Kernel::OM->Get('Kernel::Output::HTML::Layout')->{ $Self->{PrefKeyColumns} },
+        );
+
+        @ColumnsEnabled = grep { $ColumnsEnabled->{Columns}->{$_} == 1 }
+            keys %{ $ColumnsEnabled->{Columns} };
+
+        if ( $ColumnsEnabled->{Order} && @{ $ColumnsEnabled->{Order} } ) {
+            @ColumnsEnabled = @{ $ColumnsEnabled->{Order} };
+        }
+
+        # remove duplicate columns
+        my %UniqueColumns;
+        my @ColumnsEnabledAux;
+
+        for my $Column (@ColumnsEnabled) {
+            if ( !$UniqueColumns{$Column} ) {
+                push @ColumnsEnabledAux, $Column;
+            }
+            $UniqueColumns{$Column} = 1;
+        }
+
+        # set filtered column list
+        @ColumnsEnabled = @ColumnsEnabledAux;
+    }
+
+    my %Columns;
+    for my $ColumnName ( sort { $a cmp $b } @ColumnsAvailable ) {
+        $Columns{Columns}->{$ColumnName} = ( grep { $ColumnName eq $_ } @ColumnsEnabled ) ? 1 : 0;
+        if ( !grep { $_ eq $ColumnName } @ColumnsEnabled ) {
+            push @ColumnsAvailableNotEnabled, $ColumnName;
+        }
+    }
+
+    # remove CustomerID if Customer Information Center
+    if ( $Self->{Action} eq 'AgentCustomerInformationCenter' ) {
+        delete $Columns{Columns}->{CustomerID};
+        @ColumnsEnabled             = grep { $_ ne 'CustomerID' } @ColumnsEnabled;
+        @ColumnsAvailableNotEnabled = grep { $_ ne 'CustomerID' } @ColumnsAvailableNotEnabled;
+    }
+
+    my @Params = (
+        {
+            Desc  => Translatable('Shown Tickets'),
+            Name  => $Self->{PrefKeyShown},
+            Block => 'Option',
+            Data  => {
+                5  => ' 5',
+                10 => '10',
+                15 => '15',
+                20 => '20',
+                25 => '25',
+                50 => '50',
+            },
+            SelectedID  => $Self->{PageShown},
+            Translation => 0,
+        },
+        {
+            Desc             => Translatable('Shown Columns'),
+            Name             => $Self->{PrefKeyColumns},
+            Block            => 'AllocationList',
+            Columns          => $JSONObject->Encode( Data => \%Columns ),
+            ColumnsEnabled   => $JSONObject->Encode( Data => \@ColumnsEnabled ),
+            ColumnsAvailable => $JSONObject->Encode( Data => \@ColumnsAvailableNotEnabled ),
+            Translation      => 1,
+        },
+    );
+
+    return @Params;
+}
+
+sub Config {
+    my ( $Self, %Param ) = @_;
+
+    # check if frontend module of link is used
+    if ( $Self->{Config}->{Link} && $Self->{Config}->{Link} =~ /Action=(.+?)([&;].+?|)$/ ) {
+        my $Action = $1;
+        if ( !$Kernel::OM->Get('Kernel::Config')->Get('Frontend::Module')->{$Action} ) {
+            $Self->{Config}->{Link} = '';
+        }
+    }
+
+    return (
+        %{ $Self->{Config} },
+
+        # Don't cache this globally as it contains JS that is not inside of the HTML.
+        CacheTTL => undef,
+        CacheKey => undef,
+    );
+}
+
+sub FilterContent {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{FilterColumn};
+
+    my $TicketIDs;
+    my $HeaderColumn = $Param{FilterColumn};
+    my @OriginalViewableTickets;
+
+    if (
+        $Kernel::OM->Get('Kernel::Config')->Get('OnlyValuesOnTicket')
+        || $HeaderColumn eq 'CustomerID'
+        || $HeaderColumn eq 'CustomerUserID'
+        )
+    {
+        my %SearchParams        = $Self->_SearchParamsGet(%Param);
+        my %TicketSearch        = %{ $SearchParams{TicketSearch} };
+        my %TicketSearchSummary = %{ $SearchParams{TicketSearchSummary} };
+
+        # add process management search terms
+        if ( $Self->{Config}->{IsProcessWidget} ) {
+            $TicketSearch{ 'DynamicField_' . $Self->{ProcessManagementProcessID} } = {
+                Like => $Self->{ProcessList},
+            };
+        }
+
+        # Add the additional filter to the ticket search param.
+        if ( $Self->{AdditionalFilter} ) {
+            %TicketSearch = (
+                %TicketSearch,
+                %{ $TicketSearchSummary{ $Self->{AdditionalFilter} } },
+            );
+        }
+
+        if ( !$Self->{Config}->{IsProcessWidget} || IsArrayRefWithData( $Self->{ProcessList} ) ) {
+            @OriginalViewableTickets = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+                %TicketSearch,
+                %{ $TicketSearchSummary{ $Self->{Filter} } },
+                Result => 'ARRAY',
+            );
+        }
+    }
+
+    if ( $HeaderColumn =~ m/^DynamicField_/ && !defined $Self->{DynamicField} ) {
+
+        # get the dynamic fields for this screen
+        $Self->{DynamicField} = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+            Valid      => 0,
+            ObjectType => ['Ticket'],
+        );
+    }
+
+    # get column values for to build the filters later
+    my $ColumnValues = $Self->_GetColumnValues(
+        OriginalTicketIDs => \@OriginalViewableTickets,
+        HeaderColumn      => $HeaderColumn,
+    );
+
+    # make sure that even a value of 0 is passed as a Selected value, e.g. Unchecked value of a
+    # check-box dynamic field.
+    my $SelectedValue = defined $Self->{GetColumnFilter}->{ $HeaderColumn . $Self->{Name} }
+        ? $Self->{GetColumnFilter}->{ $HeaderColumn . $Self->{Name} }
+        : '';
+
+    my $LabelColumn = $HeaderColumn;
+    if ( $LabelColumn =~ m{ \A DynamicField_ }xms ) {
+
+        my $DynamicFieldConfig;
+        $LabelColumn =~ s{\A DynamicField_ }{}xms;
+
+        DYNAMICFIELD:
+        for my $DFConfig ( @{ $Self->{DynamicField} } ) {
+            next DYNAMICFIELD if !IsHashRefWithData($DFConfig);
+            next DYNAMICFIELD if $DFConfig->{Name} ne $LabelColumn;
+
+            $DynamicFieldConfig = $DFConfig;
+            last DYNAMICFIELD;
+        }
+        if ( IsHashRefWithData($DynamicFieldConfig) ) {
+            $LabelColumn = $DynamicFieldConfig->{Label};
+        }
+    }
+
+    # variable to save the filter's HTML code
+    my $ColumnFilterJSON = $Self->_ColumnFilterJSON(
+        ColumnName    => $HeaderColumn,
+        Label         => $LabelColumn,
+        ColumnValues  => $ColumnValues->{$HeaderColumn},
+        SelectedValue => $SelectedValue,
+        DashboardName => $Self->{Name},
+    );
+
+    return $ColumnFilterJSON;
+
+}
+
+sub Run {
+    my ( $Self, %Param ) = @_;
 
     my %SearchParams        = $Self->_SearchParamsGet(%Param);
     my @Columns             = @{ $SearchParams{Columns} };
     my %TicketSearch        = %{ $SearchParams{TicketSearch} };
     my %TicketSearchSummary = %{ $SearchParams{TicketSearchSummary} };
 
-    if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
-        $Self->{Filter} = 'last-search';
+    # Add the additional filter to the ticket search param.
+    if ( $Self->{AdditionalFilter} ) {
+        %TicketSearch = (
+            %TicketSearch,
+            %{ $TicketSearchSummary{ $Self->{AdditionalFilter} } },
+        );
     }
-# ---
+
+    my $CacheKey = join '-', $Self->{Name}, $Self->{Action}, $Self->{PageShown}, $Self->{StartHit}, $Self->{UserID};
+    my $CacheColumns = join(
+        ',',
+        map { $_ . '=>' . $Self->{GetColumnFilterSelect}->{$_} } sort keys %{ $Self->{GetColumnFilterSelect} }
+    );
+    $CacheKey .= '-' . $CacheColumns if $CacheColumns;
+
+    # If SortBy parameter is not defined, set to value from %TicketSearch, otherwise set to default value 'Age'.
+    if ( !defined $Self->{SortBy} ) {
+        if ( defined $TicketSearch{SortBy} && $Self->{ValidSortableColumns}->{ $TicketSearch{SortBy} } ) {
+            $Self->{SortBy} = $TicketSearch{SortBy};
+        }
+        else {
+            $Self->{SortBy} = 'Age';
+        }
+    }
+
+    $CacheKey .= '-' . $Self->{SortBy} if defined $Self->{SortBy};
+
+    # Set OrderBy parameter to the search.
+    my $IsCacheForUse = 0;
+    if ( $Self->{OrderBy} ) {
+        if (
+            $Self->{AddFilters}
+            || $Self->{TabAction}
+            || !defined $Self->{SortingColumn}
+            || $Self->{SortingColumn} ne $Self->{SortBy}
+            )
+        {
+            $TicketSearch{OrderBy} = $Self->{OrderBy};
+            $IsCacheForUse = 1;
+        }
+        else {
+            $TicketSearch{OrderBy} = $Self->{OrderBy} eq 'Up' ? 'Down' : 'Up';
+        }
+    }
+
+    # Set order for blocks.
+    $TicketSearch{OrderBy} = $TicketSearch{OrderBy} || 'Down';
+
+    # Set previous sorting column parameter for all columns.
+    $Param{SortingColumn} = $Self->{SortBy};
+
+    $CacheKey .= '-' . $TicketSearch{OrderBy} if defined $TicketSearch{OrderBy};
+
+    # CustomerInformationCenter shows data per CustomerID
+    if ( $Param{CustomerID} ) {
+        $CacheKey .= '-' . $Param{CustomerID};
+    }
+
+    # CustomerUserInformationCenter shows data per CustomerUserID
+    if ( $Param{CustomerUserID} ) {
+        $CacheKey .= '-' . $Param{CustomerUserID};
+    }
+
+    # Add the additional filter always to the cache key, if a additional filter exists.
+    if ( $Self->{AdditionalFilter} ) {
+        $CacheKey .= '-' . $Self->{AdditionalFilter};
+    }
 
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+
+    if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
+        $Self->{Filter} = 'last-search';
+    }
+
+    # check cache
+    my $SummarySearchProfiles = $CacheObject->Get(
+        Type => 'Dashboard',
+        Key  => $CacheKey . '-Summary',
+    );
+
+    # check if we have to clean up the cache
+    # in cases the search profiles have changed
+    if ( IsHashRefWithData($SummarySearchProfiles) ) {
+
+        my @CachedSearchProfiles  = grep { $_ !~ m{::Selected\z}xms } sort keys %{ $SummarySearchProfiles };
+        my @CurrentSearchProfiles = sort @{ $SearchParams{CurrentSearchProfiles} || [] };
+
+        my $CacheDiffers = DataIsDifferent(
+            Data1 => \@CachedSearchProfiles,
+            Data2 => \@CachedSearchProfiles,
+        );
+
+        if ( $CacheDiffers ) {
+
+            $CacheObject->Delete(
+                Type => 'Dashboard',
+                Key  => $CacheKey . '-Summary',
+            );
+        }
+    }
+# ---
 
     # check cache
     my $TicketIDs = $CacheObject->Get(
@@ -121,11 +706,7 @@ sub Run {
         }
 
         # add sort by parameter to the search
-        if (
-            !defined $TicketSearch{SortBy}
-            || !$Self->{ValidSortableColumns}->{ $TicketSearch{SortBy} }
-            )
-        {
+        if ( !defined $TicketSearch{SortBy} || !$Self->{ValidSortableColumns}->{ $TicketSearch{SortBy} } ) {
             if ( $Self->{SortBy} && $Self->{ValidSortableColumns}->{ $Self->{SortBy} } ) {
                 $TicketSearch{SortBy} = $Self->{SortBy};
             }
@@ -134,10 +715,7 @@ sub Run {
             }
         }
 
-        # add order by parameter to the search
-        if ( $Self->{OrderBy} ) {
-            $TicketSearch{OrderBy} = $Self->{OrderBy};
-        }
+        $CacheUsed = $IsCacheForUse ? 1 : 0;
 
         # add process management search terms
         if ( $Self->{Config}->{IsProcessWidget} ) {
@@ -146,29 +724,68 @@ sub Run {
             };
         }
 
-        $CacheUsed = 0;
         my @TicketIDsArray;
-        if (
-            !$Self->{Config}->{IsProcessWidget}
-            || IsArrayRefWithData( $Self->{ProcessList} )
-            )
-        {
-            @TicketIDsArray = $TicketObject->TicketSearch(
-                Result => 'ARRAY',
+        if ( !$Self->{Config}->{IsProcessWidget} || IsArrayRefWithData( $Self->{ProcessList} ) ) {
+
+            # Copy original column filter.
+            my %ColumnFilter = %{ $Self->{ColumnFilter} || {} };
+
+            # Change filter name accordingly.
+            my $Filter;
+            if ( $Self->{Filter} eq 'MyQueues' ) {
+                $Filter = 'QueueIDs';
+            }
+            elsif ( $Self->{Filter} eq 'MyServices' ) {
+                $Filter = 'ServiceIDs';
+
+                if ( $ColumnFilter{QueueIDs} ) {
+                    $TicketSearchSummary{ $Self->{Filter} }->{QueueIDs} = $ColumnFilter{QueueIDs};
+                }
+            }
+            elsif ( $Self->{Filter} eq 'Responsible' ) {
+                $Filter = 'ResponsibleIDs';
+            }
+            elsif ( $Self->{Filter} eq 'Locked' ) {
+                $Filter = 'LockIDs';
+            }
+
+            # Handle cases for filter columns to preserve filter value in other tab actions.
+            if ( $ColumnFilter{LockIDs} ) {
+                $TicketSearchSummary{ $Self->{Filter} }->{LockIDs} = $ColumnFilter{LockIDs};
+            }
+            elsif ( $ColumnFilter{OwnerIDs} ) {
+                $TicketSearchSummary{ $Self->{Filter} }->{OwnerIDs} = $ColumnFilter{OwnerIDs};
+            }
+
+            # Filter is used and is not in user prefered values, show no results.
+            # See bug#12808 ( https://bugs.otrs.org/show_bug.cgi?id=12808 ).
+            if (
+                $Filter
+                && IsArrayRefWithData( $TicketSearchSummary{ $Self->{Filter} }->{$Filter} )
+                && IsArrayRefWithData( $ColumnFilter{$Filter} )
+                && !grep { $ColumnFilter{$Filter}->[0] == $_ } @{ $TicketSearchSummary{ $Self->{Filter} }->{$Filter} }
+                )
+            {
+                @TicketIDsArray = ();
+            }
+
+            # Execute search.
+            else {
+                @TicketIDsArray = $TicketObject->TicketSearch(
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#                 %TicketSearch,
-#                 %{ $TicketSearchSummary{ $Self->{Filter} } },
-#                 %{ $Self->{ColumnFilter} },
-#                 Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
-                %{ $Self->{ColumnFilter} },
-                %TicketSearch,
-                %{ $TicketSearchSummary{ $Self->{Filter} } },
-                Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
-
+#                     %TicketSearch,
+#                     %{ $TicketSearchSummary{ $Self->{Filter} } },
+#                     %ColumnFilter,
+#                     Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
+                      %ColumnFilter,
+                      %TicketSearch,
+                      %{ $TicketSearchSummary{ $Self->{Filter} } },
+                      Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
 # ---
-            );
+                );
+            }
         }
         $TicketIDs = \@TicketIDsArray;
     }
@@ -179,21 +796,29 @@ sub Run {
         Key  => $CacheKey . '-Summary',
     );
 
-    # if no cache or new list result, do count lookup
+    # If no cache or new list result, do count lookup.
     if ( !$Summary || !$CacheUsed ) {
+
+        # Define the summary types for which no count is needed, because we have no output.
+        my %LookupNoCountSummaryType = (
+            AssignedToCustomerUser    => 1,
+            AccessibleForCustomerUser => 1,
+        );
+
         TYPE:
         for my $Type ( sort keys %TicketSearchSummary ) {
+            next TYPE if $LookupNoCountSummaryType{$Type};
             next TYPE if !$TicketSearchSummary{$Type};
 
-            # copy original column filter
+            # Copy original column filter.
             my %ColumnFilter = %{ $Self->{ColumnFilter} || {} };
 
-            # loop through all column filter elements
+            # Loop through all column filter elements.
             for my $Element ( sort keys %ColumnFilter ) {
 
-                # verify if current column filter element is already present in the ticket search
-                # summary, to delete it from the column filter hash
-                if ( $TicketSearchSummary{$Type}->{$Element} ) {
+                # Verify if current column filter element is already present in the ticket search
+                #   summary, to delete it from the column filter hash.
+                if ( $Self->{AdditionalFilter} && $TicketSearchSummary{ $Self->{AdditionalFilter} }->{$Element} ) {
                     delete $ColumnFilter{$Element};
                 }
             }
@@ -207,27 +832,67 @@ sub Run {
 
             $Summary->{$Type} = 0;
 
-            if (
-                !$Self->{Config}->{IsProcessWidget}
-                || IsArrayRefWithData( $Self->{ProcessList} )
-                )
-            {
-                $Summary->{$Type} = $TicketObject->TicketSearch(
-                    Result => 'COUNT',
+            if ( !$Self->{Config}->{IsProcessWidget} || IsArrayRefWithData( $Self->{ProcessList} ) ) {
+
+                # Change filter name accordingly.
+                my $Filter;
+                if ( $Type eq 'MyQueues' ) {
+                    $Filter = 'QueueIDs';
+                }
+                elsif ( $Type eq 'MyServices' ) {
+                    $Filter = 'ServiceIDs';
+
+                    if ( $ColumnFilter{QueueIDs} ) {
+                        $TicketSearchSummary{$Type}->{QueueIDs} = $ColumnFilter{QueueIDs};
+                    }
+                }
+                elsif ( $Type eq 'Responsible' ) {
+                    $Filter = 'ResponsibleIDs';
+                }
+                elsif ( $Type eq 'MyLocks' ) {
+                    $Filter = 'LockIDs';
+                }
+
+                # Handle cases for filter columns to preserve filter value in other tab actions.
+                if ( $ColumnFilter{LockIDs} ) {
+                    $TicketSearchSummary{$Type}->{LockIDs} = $ColumnFilter{LockIDs};
+                }
+                elsif ( $ColumnFilter{OwnerIDs} ) {
+                    $TicketSearchSummary{ $Self->{Filter} }->{OwnerIDs} = $ColumnFilter{OwnerIDs};
+                }
+
+                # Filter is used and is not in user prefered values, show no results.
+                # See bug#12808 ( https://bugs.otrs.org/show_bug.cgi?id=12808 ).
+                if (
+                    $Filter
+                    && IsArrayRefWithData( $TicketSearchSummary{$Type}->{$Filter} )
+                    && IsArrayRefWithData( $ColumnFilter{$Filter} )
+                    && !grep { $ColumnFilter{$Filter}->[0] == $_ } @{ $TicketSearchSummary{$Type}->{$Filter} }
+                    )
+                {
+                    $Summary->{$Type} = 0;
+                }
+
+                # Execute search.
+                else {
+                    $Summary->{$Type} = $TicketObject->TicketSearch(
+                        Result => 'COUNT',
+                        %TicketSearch,
+                        %{ $TicketSearchSummary{$Type} },
+                        %ColumnFilter,
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#                     %TicketSearch,
-#                     %{ $TicketSearchSummary{$Type} },
-#                     %{ $Self->{ColumnFilter} },
-#                     %ColumnFilter,
+#                         %TicketSearch,
+#                         %{ $TicketSearchSummary{$Type} },
+#                         %ColumnFilter,
 #
-                    %{ $Self->{ColumnFilter} },
-                    %ColumnFilter,
-                    %TicketSearch,
-                    %{ $TicketSearchSummary{$Type} },
+                          %ColumnFilter,
+                          %TicketSearch,
+                          %{ $TicketSearchSummary{$Type} },
 # ---
-                );
+                    ) || 0;
+                }
             }
         }
     }
@@ -248,10 +913,12 @@ sub Run {
         );
     }
 
-    # set css class
+    # Set the css class for the selected filter and additional filter.
     $Summary->{ $Self->{Filter} . '::Selected' } = 'Selected';
+    if ( $Self->{AdditionalFilter} ) {
+        $Summary->{ $Self->{AdditionalFilter} . '::Selected' } = 'Selected';
+    }
 
-    # get layout object
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # get filter ticket counts
@@ -268,9 +935,33 @@ sub Run {
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#
-#     # get config object
 #     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+#
+#     # show only AssignedToCustomerUser if we have the filter
+#     if ( $TicketSearchSummary{AssignedToCustomerUser} ) {
+#         $LayoutObject->Block(
+#             Name => 'ContentLargeTicketGenericFilterAssignedToCustomerUser',
+#             Data => {
+#                 %Param,
+#                 %{ $Self->{Config} },
+#                 Name => $Self->{Name},
+#                 %{$Summary},
+#             },
+#         );
+#     }
+#
+#     # show only locked if we have the filter
+#     if ( $TicketSearchSummary{AccessibleForCustomerUser} ) {
+#         $LayoutObject->Block(
+#             Name => 'ContentLargeTicketGenericFilterAccessibleForCustomerUser',
+#             Data => {
+#                 %Param,
+#                 %{ $Self->{Config} },
+#                 Name => $Self->{Name},
+#                 %{$Summary},
+#             },
+#         );
+#     }
 #
 #     # show also watcher if feature is enabled and there is a watcher filter
 #     if ( $ConfigObject->Get('Ticket::Watcher') && $TicketSearchSummary{Watcher} ) {
@@ -340,8 +1031,7 @@ sub Run {
     # order search profiles and make sure
     # last-search is at the last position
     my %SearchProfiles = %{ $Summary };
-    delete $SearchProfiles{'last-search'};
-    my @SearchProfiles = sort keys %SearchProfiles;
+    my @SearchProfiles = grep { $_ ne 'last-search' } sort keys %SearchProfiles;
     push @SearchProfiles, 'last-search';
 
     # display the search profiles in a list
@@ -376,29 +1066,34 @@ sub Run {
         next COLUMNNAME if !$GetColumnFilter{$ColumnName};
         $ColumnFilterLink
             .= ';' . $LayoutObject->Ascii2Html( Text => 'ColumnFilter' . $ColumnName )
-            . '=' . $LayoutObject->Ascii2Html( Text => $GetColumnFilter{$ColumnName} )
+            . '=' . $LayoutObject->Ascii2Html( Text => $GetColumnFilter{$ColumnName} );
     }
 
     my $LinkPage =
         'Subaction=Element;Name=' . $Self->{Name}
         . ';Filter=' . $Self->{Filter}
-        . ';SortBy=' .  ( $Self->{SortBy}  || '' )
-        . ';OrderBy=' . ( $Self->{OrderBy} || '' )
+        . ';AdditionalFilter=' . ( $Self->{AdditionalFilter} || '' )
+        . ';SortBy=' .           ( $Self->{SortBy}           || '' )
+        . ';OrderBy=' .          ( $TicketSearch{OrderBy}    || '' )
         . $ColumnFilterLink
         . ';';
 
     if ( $Param{CustomerID} ) {
         $LinkPage .= "CustomerID=$Param{CustomerID};";
     }
+    if ( $Param{CustomerUserID} ) {
+        $LinkPage .= "CustomerUserID=$Param{CustomerUserID};";
+    }
+
     my %PageNav = $LayoutObject->PageNavBar(
-        StartHit       => $Self->{StartHit},
-        PageShown      => $Self->{PageShown},
-        AllHits        => $Total || 1,
-        Action         => 'Action=' . $LayoutObject->{Action},
-        Link           => $LinkPage,
-        AJAXReplace    => 'Dashboard' . $Self->{Name},
-        IDPrefix       => 'Dashboard' . $Self->{Name},
-        KeepScriptTags => $Param{AJAX},
+        StartHit    => $Self->{StartHit},
+        PageShown   => $Self->{PageShown},
+        AllHits     => $Total || 1,
+        Action      => 'Action=' . $LayoutObject->{Action},
+        Link        => $LinkPage,
+        AJAXReplace => 'Dashboard' . $Self->{Name},
+        IDPrefix    => 'Dashboard' . $Self->{Name},
+        AJAX        => $Param{AJAX},
     );
     $LayoutObject->Block(
         Name => 'ContentLargeTicketGenericFilterNavBar',
@@ -418,24 +1113,38 @@ sub Run {
     # define which meta items will be shown
     my @MetaItems = $LayoutObject->TicketMetaItemsCount();
 
+    # remove (-) from name for JS config
+    my $WidgetName = $Self->{Name};
+    $WidgetName =~ s{-}{}g;
+
     # show non-labeled table headers
     my $CSS = '';
-    my $OrderBy;
+
+    # Send data to JS for init container.
+    $LayoutObject->AddJSData(
+        Key   => 'InitContainerDashboard' . $Self->{Name},
+        Value => {
+            SortBy => $Self->{SortBy} || 'Age',
+            OrderBy => $TicketSearch{OrderBy},
+        },
+    );
+
     for my $Item (@MetaItems) {
         $CSS = '';
-        my $Title = $Item;
-        if ( $Self->{SortBy} && ( $Self->{SortBy} eq $Item ) ) {
-            if ( $Self->{OrderBy} && ( $Self->{OrderBy} eq 'Up' ) ) {
-                $OrderBy = 'Down';
-                $CSS .= ' SortAscendingLarge';
+        my $Title = $LayoutObject->{LanguageObject}->Translate($Item);
+
+        # set title description
+        if ( $Self->{SortBy} && $Self->{SortBy} eq $Item ) {
+            my $TitleDesc = '';
+            if ( $TicketSearch{OrderBy} eq 'Down' ) {
+                $CSS .= ' SortDescendingLarge';
+                $TitleDesc = Translatable('sorted descending');
             }
             else {
-                $OrderBy = 'Up';
-                $CSS .= ' SortDescendingLarge';
+                $CSS .= ' SortAscendingLarge';
+                $TitleDesc = Translatable('sorted ascending');
             }
 
-            # set title description
-            my $TitleDesc = $OrderBy eq 'Down' ? Translatable('sorted ascending') : Translatable('sorted descending');
             $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
             $Title .= ', ' . $TitleDesc;
         }
@@ -447,7 +1156,9 @@ sub Run {
         $LayoutObject->Block(
             Name => 'ContentLargeTicketGenericHeaderMeta',
             Data => {
-                CSS => $CSS,
+                CSS              => $CSS,
+                HeaderColumnName => $Item,
+                Title            => $Title,
             },
         );
 
@@ -461,12 +1172,24 @@ sub Run {
             );
         }
         else {
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'HeaderMeta' . $WidgetName,
+                Value => {
+                    Name             => $Self->{Name},
+                    OrderBy          => $TicketSearch{OrderBy},
+                    HeaderColumnName => $Item,
+                    SortingColumn    => $Param{SortingColumn},
+                },
+            );
+
             $LayoutObject->Block(
                 Name => 'ContentLargeTicketGenericHeaderMetaLink',
                 Data => {
                     %Param,
                     Name             => $Self->{Name},
-                    OrderBy          => $OrderBy || 'Up',
+                    OrderBy          => $TicketSearch{OrderBy},
                     HeaderColumnName => $Item,
                     Title            => $Title,
                 },
@@ -474,16 +1197,18 @@ sub Run {
         }
     }
 
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'HeaderColumn' . $WidgetName,
+        Value => \@Columns
+    );
+
     # show all needed headers
     HEADERCOLUMN:
     for my $HeaderColumn (@Columns) {
 
         # skip CustomerID if Customer Information Center
-        if (
-            $Self->{Action} eq 'AgentCustomerInformationCenter'
-            && $HeaderColumn eq 'CustomerID'
-            )
-        {
+        if ( $Self->{Action} eq 'AgentCustomerInformationCenter' && $HeaderColumn eq 'CustomerID' ) {
             next HEADERCOLUMN;
         }
 
@@ -492,19 +1217,18 @@ sub Run {
             $CSS = '';
             my $Title = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
 
-            if ( $Self->{SortBy} && ( $Self->{SortBy} eq $HeaderColumn ) ) {
-                if ( $Self->{OrderBy} && ( $Self->{OrderBy} eq 'Up' ) ) {
-                    $OrderBy = 'Down';
-                    $CSS .= ' SortAscendingLarge';
+            # Set title description.
+            if ( $Self->{SortBy} && $Self->{SortBy} eq $HeaderColumn ) {
+                my $TitleDesc = '';
+                if ( $TicketSearch{OrderBy} eq 'Down' ) {
+                    $CSS .= ' SortDescendingLarge';
+                    $TitleDesc = Translatable('sorted descending');
                 }
                 else {
-                    $OrderBy = 'Up';
-                    $CSS .= ' SortDescendingLarge';
+                    $CSS .= ' SortAscendingLarge';
+                    $TitleDesc = Translatable('sorted ascending');
                 }
 
-                # add title description
-                my $TitleDesc
-                    = $OrderBy eq 'Down' ? Translatable('sorted ascending') : Translatable('sorted descending');
                 $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                 $Title .= ', ' . $TitleDesc;
             }
@@ -526,6 +1250,18 @@ sub Run {
             elsif ( $HeaderColumn eq 'PendingTime' ) {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Pending till');
             }
+            elsif ( $HeaderColumn eq 'CustomerCompanyName' ) {
+                $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer Name');
+            }
+            elsif ( $HeaderColumn eq 'CustomerID' ) {
+                $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer ID');
+            }
+            elsif ( $HeaderColumn eq 'CustomerName' ) {
+                $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User Name');
+            }
+            elsif ( $HeaderColumn eq 'CustomerUserID' ) {
+                $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User ID');
+            }
             else {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
             }
@@ -540,15 +1276,24 @@ sub Run {
             );
 
             if ( $HeaderColumn eq 'TicketNumber' ) {
+
+                # send data to JS
+                $LayoutObject->AddJSData(
+                    Key   => 'TicketNumberColumn' . $WidgetName,
+                    Value => {
+                        Name          => $Self->{Name},
+                        OrderBy       => $TicketSearch{OrderBy},
+                        SortingColumn => $Param{SortingColumn},
+                    },
+                );
+
                 $LayoutObject->Block(
                     Name => 'ContentLargeTicketGenericHeaderTicketNumberColumn',
                     Data => {
                         %Param,
-                        CSS => $CSS || '',
-                        Name    => $Self->{Name},
-                        OrderBy => $OrderBy || 'Up',
-                        Filter  => $Self->{Filter},
-                        Title   => $Title,
+                        CSS   => $CSS || '',
+                        Name  => $Self->{Name},
+                        Title => $Title,
                     },
                 );
                 next HEADERCOLUMN;
@@ -556,8 +1301,7 @@ sub Run {
 
             my $FilterTitle     = $TranslatedWord;
             my $FilterTitleDesc = Translatable('filter not active');
-            if ( $Self->{GetColumnFilterSelect} && $Self->{GetColumnFilterSelect}->{$HeaderColumn} )
-            {
+            if ( $Self->{GetColumnFilterSelect} && $Self->{GetColumnFilterSelect}->{$HeaderColumn} ) {
                 $CSS .= ' FilterActive';
                 $FilterTitleDesc = Translatable('filter active');
             }
@@ -596,6 +1340,18 @@ sub Run {
                     Css        => $Css,
                 );
 
+                # send data to JS
+                $LayoutObject->AddJSData(
+                    Key   => 'ColumnFilterSort' . $HeaderColumn . $WidgetName,
+                    Value => {
+                        HeaderColumnName => $HeaderColumn,
+                        Name             => $Self->{Name},
+                        SortBy           => $Self->{SortBy} || 'Age',
+                        OrderBy          => $TicketSearch{OrderBy},
+                        SortingColumn    => $Param{SortingColumn},
+                    },
+                );
+
                 $LayoutObject->Block(
                     Name => 'ContentLargeTicketGenericHeaderColumnFilterLink',
                     Data => {
@@ -604,7 +1360,7 @@ sub Run {
                         CSS                  => $CSS,
                         HeaderNameTranslated => $TranslatedWord || $HeaderColumn,
                         ColumnFilterStrg     => $ColumnFilterHTML,
-                        OrderBy              => $OrderBy || 'Up',
+                        OrderBy              => $TicketSearch{OrderBy},
                         SortBy               => $Self->{SortBy} || 'Age',
                         Name                 => $Self->{Name},
                         Title                => $Title,
@@ -614,24 +1370,35 @@ sub Run {
 
                 if ( $HeaderColumn eq 'CustomerID' ) {
 
-                    $LayoutObject->Block(
-                        Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkCustomerIDSearch',
-                        Data => {
-                            minQueryLength      => 2,
-                            queryDelay          => 100,
-                            maxResultsDisplayed => 20,
+                    # send data to JS
+                    $LayoutObject->AddJSData(
+                        Key   => 'CustomerIDAutocomplete',
+                        Value => {
+                            QueryDelay          => 100,
+                            MaxResultsDisplayed => 20,
+                            MinQueryLength      => 2,
                         },
                     );
+                    $LayoutObject->Block(
+                        Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkCustomerIDSearch',
+                        Data => {},
+                    );
                 }
+
                 elsif ( $HeaderColumn eq 'Responsible' || $HeaderColumn eq 'Owner' ) {
 
+                    # send data to JS
+                    $LayoutObject->AddJSData(
+                        Key   => 'UserAutocomplete',
+                        Value => {
+                            QueryDelay          => 100,
+                            MaxResultsDisplayed => 20,
+                            MinQueryLength      => 2,
+                        },
+                    );
                     $LayoutObject->Block(
                         Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkUserSearch',
-                        Data => {
-                            minQueryLength      => 2,
-                            queryDelay          => 100,
-                            maxResultsDisplayed => 20,
-                        },
+                        Data => {},
                     );
                 }
             }
@@ -650,6 +1417,17 @@ sub Run {
                     Css        => $Css,
                 );
 
+                # send data to JS
+                $LayoutObject->AddJSData(
+                    Key   => 'ColumnFilter' . $HeaderColumn . $WidgetName,
+                    Value => {
+                        HeaderColumnName => $HeaderColumn,
+                        Name             => $Self->{Name},
+                        SortBy           => $Self->{SortBy} || 'Age',
+                        OrderBy          => $TicketSearch{OrderBy},
+                    },
+                );
+
                 $LayoutObject->Block(
                     Name => 'ContentLargeTicketGenericHeaderColumnFilter',
                     Data => {
@@ -666,19 +1444,37 @@ sub Run {
 
                 if ( $HeaderColumn eq 'CustomerUserID' ) {
 
+                    # send data to JS
+                    $LayoutObject->AddJSData(
+                        Key   => 'CustomerUserAutocomplete',
+                        Value => {
+                            QueryDelay          => 100,
+                            MaxResultsDisplayed => 20,
+                            MinQueryLength      => 2,
+                        },
+                    );
                     $LayoutObject->Block(
                         Name => 'ContentLargeTicketGenericHeaderColumnFilterLinkCustomerUserSearch',
-                        Data => {
-                            minQueryLength      => 2,
-                            queryDelay          => 100,
-                            maxResultsDisplayed => 20,
-                        },
+                        Data => {},
                     );
                 }
             }
 
             # verify if column is just sortable
             elsif ( $Self->{ValidSortableColumns}->{$HeaderColumn} ) {
+
+                # send data to JS
+                $LayoutObject->AddJSData(
+                    Key   => 'ColumnSortable' . $HeaderColumn . $WidgetName,
+                    Value => {
+                        HeaderColumnName => $HeaderColumn,
+                        Name             => $Self->{Name},
+                        SortBy           => $Self->{SortBy} || $HeaderColumn,
+                        OrderBy          => $TicketSearch{OrderBy},
+                        SortingColumn    => $Param{SortingColumn},
+                    },
+                );
+
                 $LayoutObject->Block(
                     Name => 'ContentLargeTicketGenericHeaderColumnLink',
                     Data => {
@@ -686,7 +1482,7 @@ sub Run {
                         HeaderColumnName     => $HeaderColumn,
                         CSS                  => $CSS,
                         HeaderNameTranslated => $TranslatedWord || $HeaderColumn,
-                        OrderBy              => $OrderBy || 'Up',
+                        OrderBy              => $TicketSearch{OrderBy},
                         SortBy               => $Self->{SortBy} || $HeaderColumn,
                         Name                 => $Self->{Name},
                         Title                => $Title,
@@ -731,11 +1527,7 @@ sub Run {
             my $CSS             = '';
             my $FilterTitle     = $Label;
             my $FilterTitleDesc = Translatable('filter not active');
-            if (
-                $Self->{GetColumnFilterSelect}
-                && defined $Self->{GetColumnFilterSelect}->{$DynamicFieldName}
-                )
-            {
+            if ( $Self->{GetColumnFilterSelect} && defined $Self->{GetColumnFilterSelect}->{$DynamicFieldName} ) {
                 $CSS .= 'FilterActive ';
                 $FilterTitleDesc = Translatable('filter active');
             }
@@ -761,24 +1553,21 @@ sub Run {
             );
 
             if ($IsSortable) {
-                my $OrderBy;
+                my $TitleDesc = '';
                 if (
                     $Self->{SortBy}
                     && ( $Self->{SortBy} eq ( 'DynamicField_' . $DynamicFieldConfig->{Name} ) )
                     )
                 {
-                    if ( $Self->{OrderBy} && ( $Self->{OrderBy} eq 'Up' ) ) {
-                        $OrderBy = 'Down';
-                        $CSS .= ' SortAscendingLarge';
+                    if ( $TicketSearch{OrderBy} eq 'Down' ) {
+                        $CSS .= ' SortDescendingLarge';
+                        $TitleDesc = Translatable('sorted descending');
                     }
                     else {
-                        $OrderBy = 'Up';
-                        $CSS .= ' SortDescendingLarge';
+                        $CSS .= ' SortAscendingLarge';
+                        $TitleDesc = Translatable('sorted ascending');
                     }
 
-                    # add title description
-                    my $TitleDesc
-                        = $OrderBy eq 'Down' ? Translatable('sorted ascending') : Translatable('sorted descending');
                     $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
                     $Title .= ', ' . $TitleDesc;
                 }
@@ -800,6 +1589,18 @@ sub Run {
                         Label      => $Label,
                     );
 
+                    # send data to JS
+                    $LayoutObject->AddJSData(
+                        Key   => 'ColumnFilterSort' . $DynamicFieldName . $WidgetName,
+                        Value => {
+                            HeaderColumnName => $DynamicFieldName,
+                            Name             => $Self->{Name},
+                            SortBy           => $Self->{SortBy} || 'Age',
+                            OrderBy          => $TicketSearch{OrderBy},
+                            SortingColumn    => $Param{SortingColumn},
+                        },
+                    );
+
                     # output sortable and filterable dynamic field
                     $LayoutObject->Block(
                         Name => 'ContentLargeTicketGenericHeaderColumnFilterLink',
@@ -809,7 +1610,7 @@ sub Run {
                             CSS                  => $CSS,
                             HeaderNameTranslated => $TranslatedLabel || $DynamicFieldName,
                             ColumnFilterStrg     => $ColumnFilterHTML,
-                            OrderBy              => $OrderBy || 'Up',
+                            OrderBy              => $TicketSearch{OrderBy},
                             SortBy               => $Self->{SortBy} || 'Age',
                             Name                 => $Self->{Name},
                             Title                => $Title,
@@ -821,6 +1622,18 @@ sub Run {
                 # otherwise the dynamic field is only sortable (sortable check was made before)
                 else {
 
+                    # send data to JS
+                    $LayoutObject->AddJSData(
+                        Key   => 'ColumnSortable' . $DynamicFieldName . $WidgetName,
+                        Value => {
+                            HeaderColumnName => $DynamicFieldName,
+                            Name             => $Self->{Name},
+                            SortBy           => $Self->{SortBy} || $DynamicFieldName,
+                            OrderBy          => $TicketSearch{OrderBy},
+                            SortingColumn    => $Param{SortingColumn},
+                        },
+                    );
+
                     # output sortable dynamic field
                     $LayoutObject->Block(
                         Name => 'ContentLargeTicketGenericHeaderColumnLink',
@@ -829,7 +1642,7 @@ sub Run {
                             HeaderColumnName     => $DynamicFieldName,
                             CSS                  => $CSS,
                             HeaderNameTranslated => $TranslatedLabel || $DynamicFieldName,
-                            OrderBy              => $OrderBy || 'Up',
+                            OrderBy              => $TicketSearch{OrderBy},
                             SortBy               => $Self->{SortBy} || $DynamicFieldName,
                             Name                 => $Self->{Name},
                             Title                => $Title,
@@ -856,6 +1669,17 @@ sub Run {
                 my $ColumnFilterHTML = $Self->_InitialColumnFilter(
                     ColumnName => $DynamicFieldName,
                     Label      => $Label,
+                );
+
+                # send data to JS
+                $LayoutObject->AddJSData(
+                    Key   => 'ColumnFilter' . $DynamicFieldName . $WidgetName,
+                    Value => {
+                        HeaderColumnName => $DynamicFieldName,
+                        Name             => $Self->{Name},
+                        SortBy           => $Self->{SortBy} || 'Age',
+                        OrderBy          => $TicketSearch{OrderBy},
+                    },
                 );
 
                 # output filterable (not sortable) dynamic field
@@ -930,9 +1754,10 @@ sub Run {
 
         # create human age
         if ( $Self->{Config}->{Time} ne 'Age' ) {
-            $Ticket{Time} = $LayoutObject->CustomerAgeInHours(
-                Age   => $Ticket{ $Self->{Config}->{Time} },
-                Space => ' ',
+            $Ticket{Time} = $LayoutObject->CustomerAge(
+                Age                => $Ticket{ $Self->{Config}->{Time} },
+                TimeShowAlwaysLong => 1,
+                Space              => ' ',
             );
         }
         else {
@@ -981,11 +1806,7 @@ sub Run {
         for my $Column (@Columns) {
 
             # skip CustomerID if Customer Information Center
-            if (
-                $Self->{Action} eq 'AgentCustomerInformationCenter'
-                && $Column eq 'CustomerID'
-                )
-            {
+            if ( $Self->{Action} eq 'AgentCustomerInformationCenter' && $Column eq 'CustomerID' ) {
                 next COLUMN;
             }
 
@@ -1017,16 +1838,17 @@ sub Run {
                     $EscalationData{EscalationTime}            = $Ticket{EscalationTime};
                     $EscalationData{EscalationDestinationDate} = $Ticket{EscalationDestinationDate};
 
-                    $EscalationData{EscalationTimeHuman} = $LayoutObject->CustomerAgeInHours(
-                        Age   => $EscalationData{EscalationTime},
-                        Space => ' ',
+                    $EscalationData{EscalationTimeHuman} = $LayoutObject->CustomerAge(
+                        Age                => $EscalationData{EscalationTime},
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
+                    ) || '-';
+                    $EscalationData{EscalationTimeWorkingTime} = $LayoutObject->CustomerAge(
+                        Age                => $EscalationData{EscalationTimeWorkingTime},
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
-                    $EscalationData{EscalationTimeWorkingTime} = $LayoutObject->CustomerAgeInHours(
-                        Age   => $EscalationData{EscalationTimeWorkingTime},
-                        Space => ' ',
-                    );
-                    if ( defined $Ticket{EscalationTime} && $Ticket{EscalationTime} < 60 * 60 * 1 )
-                    {
+                    if ( defined $Ticket{EscalationTime} && $Ticket{EscalationTime} < 60 * 60 * 1 ) {
                         $EscalationData{EscalationClass} = 'Warning';
                     }
                     $LayoutObject->Block(
@@ -1034,11 +1856,6 @@ sub Run {
                         Data => {%EscalationData},
                     );
                     next COLUMN;
-
-                    $DataValue = $LayoutObject->CustomerAge(
-                        Age   => $Ticket{'EscalationTime'},
-                        Space => ' '
-                    );
                 }
                 elsif ( $Column eq 'Age' ) {
                     $DataValue = $LayoutObject->CustomerAge(
@@ -1048,9 +1865,10 @@ sub Run {
                 }
                 elsif ( $Column eq 'EscalationSolutionTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Ticket{SolutionTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Ticket{SolutionTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if ( defined $Ticket{SolutionTime} && $Ticket{SolutionTime} < 60 * 60 * 1 ) {
                         $CSSClass = 'Warning';
@@ -1058,9 +1876,10 @@ sub Run {
                 }
                 elsif ( $Column eq 'EscalationResponseTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Ticket{FirstResponseTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Ticket{FirstResponseTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if (
                         defined $Ticket{FirstResponseTime}
@@ -1072,9 +1891,10 @@ sub Run {
                 }
                 elsif ( $Column eq 'EscalationUpdateTime' ) {
                     $BlockType = 'Escalation';
-                    $DataValue = $LayoutObject->CustomerAgeInHours(
-                        Age => $Ticket{UpdateTime} || 0,
-                        Space => ' ',
+                    $DataValue = $LayoutObject->CustomerAge(
+                        Age                => $Ticket{UpdateTime} || 0,
+                        TimeShowAlwaysLong => 1,
+                        Space              => ' ',
                     );
                     if ( defined $Ticket{UpdateTime} && $Ticket{UpdateTime} < 60 * 60 * 1 ) {
                         $CSSClass = 'Warning';
@@ -1084,7 +1904,7 @@ sub Run {
                     $BlockType = 'Escalation';
                     $DataValue = $LayoutObject->CustomerAge(
                         Age   => $Ticket{'UntilTime'},
-                        Space => ' '
+                        Space => ' ',
                     );
                     if ( defined $Ticket{UntilTime} && $Ticket{UntilTime} < -1 ) {
                         $CSSClass = 'Warning';
@@ -1096,7 +1916,7 @@ sub Run {
                     my %OwnerInfo = $UserObject->GetUserData(
                         UserID => $Ticket{OwnerID},
                     );
-                    $DataValue = $OwnerInfo{'UserFirstname'} . ' ' . $OwnerInfo{'UserLastname'};
+                    $DataValue = $OwnerInfo{'UserFullname'};
                 }
                 elsif ( $Column eq 'Responsible' ) {
 
@@ -1104,8 +1924,7 @@ sub Run {
                     my %ResponsibleInfo = $UserObject->GetUserData(
                         UserID => $Ticket{ResponsibleID},
                     );
-                    $DataValue = $ResponsibleInfo{'UserFirstname'} . ' '
-                        . $ResponsibleInfo{'UserLastname'};
+                    $DataValue = $ResponsibleInfo{'UserFullname'};
                 }
                 elsif (
                     $Column eq 'State'
@@ -1148,7 +1967,7 @@ sub Run {
                     $LayoutObject->Block(
                         Name => "ContentLargeTicketTitle",
                         Data => {
-                            Title => "$DataValue " || '',
+                            Title      => "$DataValue " || '',
                             WholeTitle => $WholeTitle,
                             Class      => $CSSClass || '',
                         },
@@ -1159,7 +1978,7 @@ sub Run {
                     $LayoutObject->Block(
                         Name => "ContentLargeTicketGenericColumn$BlockType",
                         Data => {
-                            GenericValue => $DataValue || '',
+                            GenericValue => $DataValue || '-',
                             Class        => $CSSClass  || '',
                         },
                     );
@@ -1241,39 +2060,39 @@ sub Run {
     my $Refresh = '';
     if ( $Self->{UserRefreshTime} ) {
         $Refresh = 60 * $Self->{UserRefreshTime};
-        my $NameHTML = $Self->{Name};
-        $NameHTML =~ s{-}{_}xmsg;
-        $LayoutObject->Block(
-            Name => 'ContentLargeTicketGenericRefresh',
-            Data => {
-                %{ $Self->{Config} },
-                Name        => $Self->{Name},
-                NameHTML    => $NameHTML,
-                RefreshTime => $Refresh,
-                CustomerID  => $Param{CustomerID},
-                %{$Summary},
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'WidgetRefresh' . $WidgetName,
+            Value => {
+                Name           => $Self->{Name},
+                NameHTML       => $WidgetName,
+                RefreshTime    => $Refresh,
+                CustomerID     => $Param{CustomerID},
+                CustomerUserID => $Param{CustomerUserID},
             },
         );
     }
 
     # check for active filters and add a 'remove filters' button to the widget header
+    my $FilterActive = 0;
     if ( $Self->{GetColumnFilterSelect} && IsHashRefWithData( $Self->{GetColumnFilterSelect} ) ) {
-        $LayoutObject->Block(
-            Name => 'ContentLargeTicketGenericRemoveFilters',
-            Data => {
-                Name       => $Self->{Name},
-                CustomerID => $Param{CustomerID},
-            },
-        );
+        $FilterActive = 1;
     }
-    else {
-        $LayoutObject->Block(
-            Name => 'ContentLargeTicketGenericRemoveFiltersRemove',
-            Data => {
-                Name => $Self->{Name},
-            },
-        );
-    }
+
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'WidgetContainer' . $WidgetName,
+        Value => {
+            Name           => $Self->{Name},
+            CustomerID     => $Param{CustomerID},
+            CustomerUserID => $Param{CustomerUserID},
+            FilterActive   => $FilterActive,
+            SortBy         => $Self->{SortBy} || 'Age',
+            OrderBy        => $TicketSearch{OrderBy},
+            SortingColumn  => $Param{SortingColumn},
+        },
+    );
 
     my $Content = $LayoutObject->Output(
 # ---
@@ -1287,13 +2106,220 @@ sub Run {
             %{ $Self->{Config} },
             Name => $Self->{Name},
             %{$Summary},
-            FilterValue => $Self->{Filter},
-            CustomerID  => $Self->{CustomerID},
+            FilterValue      => $Self->{Filter},
+            AdditionalFilter => $Self->{AdditionalFilter},
+            CustomerID       => $Self->{CustomerID},
+            CustomerUserID   => $Self->{CustomerUserID},
         },
-        KeepScriptTags => $Param{AJAX},
+        AJAX => $Param{AJAX},
     );
 
     return $Content;
+}
+
+sub _InitialColumnFilter {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ColumnName};
+    return if !$Self->{ValidFilterableColumns}->{ $Param{ColumnName} };
+
+    # get layout object
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $Label = $Param{Label} || $Param{ColumnName};
+    $Label = $LayoutObject->{LanguageObject}->Translate($Label);
+
+    # set fixed values
+    my $Data = [
+        {
+            Key   => '',
+            Value => uc $Label,
+        },
+    ];
+
+    # define if column filter values should be translatable
+    my $TranslationOption = 0;
+
+    if (
+        $Param{ColumnName} eq 'State'
+        || $Param{ColumnName} eq 'Lock'
+        || $Param{ColumnName} eq 'Priority'
+        )
+    {
+        $TranslationOption = 1;
+    }
+
+    my $Class = 'ColumnFilter';
+    if ( $Param{Css} ) {
+        $Class .= ' ' . $Param{Css};
+    }
+
+    # build select HTML
+    my $ColumnFilterHTML = $LayoutObject->BuildSelection(
+        Name        => 'ColumnFilter' . $Param{ColumnName} . $Self->{Name},
+        Data        => $Data,
+        Class       => $Class,
+        Translation => $TranslationOption,
+        SelectedID  => '',
+    );
+    return $ColumnFilterHTML;
+}
+
+sub _GetColumnValues {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsStringWithData( $Param{HeaderColumn} );
+
+    my $HeaderColumn = $Param{HeaderColumn};
+    my %ColumnFilterValues;
+    my $TicketIDs;
+
+    if ( IsArrayRefWithData( $Param{OriginalTicketIDs} ) ) {
+        $TicketIDs = $Param{OriginalTicketIDs};
+    }
+
+    if ( $HeaderColumn !~ m/^DynamicField_/ ) {
+        my $FunctionName = $HeaderColumn . 'FilterValuesGet';
+        if ( $HeaderColumn eq 'CustomerID' ) {
+            $FunctionName = 'CustomerFilterValuesGet';
+        }
+
+        $ColumnFilterValues{$HeaderColumn} = $Kernel::OM->Get('Kernel::System::Ticket::ColumnFilter')->$FunctionName(
+            TicketIDs    => $TicketIDs,
+            HeaderColumn => $HeaderColumn,
+            UserID       => $Self->{UserID},
+        );
+    }
+    else {
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
+
+            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+            my $FieldName = 'DynamicField_' . $DynamicFieldConfig->{Name};
+
+            next DYNAMICFIELD if $FieldName ne $HeaderColumn;
+
+            # get dynamic field backend object
+            my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+            my $IsFiltrable = $BackendObject->HasBehavior(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Behavior           => 'IsFiltrable',
+            );
+
+            next DYNAMICFIELD if !$IsFiltrable;
+
+            $Self->{ValidFilterableColumns}->{$HeaderColumn} = $IsFiltrable;
+            if ( IsArrayRefWithData($TicketIDs) ) {
+
+                # get the historical values for the field
+                $ColumnFilterValues{$HeaderColumn} = $BackendObject->ColumnFilterValuesGet(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    LayoutObject       => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
+                    TicketIDs          => $TicketIDs,
+                );
+            }
+            else {
+
+                # get PossibleValues
+                $ColumnFilterValues{$HeaderColumn} = $BackendObject->PossibleValuesGet(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                );
+            }
+            last DYNAMICFIELD;
+        }
+    }
+
+    return \%ColumnFilterValues;
+}
+
+# =over
+
+# =head2 _ColumnFilterJSON()
+
+#     creates a JSON select filter for column header
+
+#     my $ColumnFilterJSON = $TicketOverviewSmallObject->_ColumnFilterJSON(
+#         ColumnName => 'Queue',
+#         Label      => 'Queue',
+#         ColumnValues => {
+#             1 => 'PostMaster',
+#             2 => 'Junk',
+#         },
+#         SelectedValue '1',
+#     );
+
+# =cut
+
+sub _ColumnFilterJSON {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ColumnName};
+    return if !$Self->{ValidFilterableColumns}->{ $Param{ColumnName} };
+
+    # get layout object
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $Label = $Param{Label};
+    $Label =~ s{ \A DynamicField_ }{}gxms;
+    $Label = $LayoutObject->{LanguageObject}->Translate($Label);
+
+    # set fixed values
+    my $Data = [
+        {
+            Key   => 'DeleteFilter',
+            Value => uc $Label,
+        },
+        {
+            Key      => '-',
+            Value    => '-',
+            Disabled => 1,
+        },
+    ];
+
+    if ( $Param{ColumnValues} && ref $Param{ColumnValues} eq 'HASH' ) {
+
+        my %Values = %{ $Param{ColumnValues} };
+
+        # set possible values
+        for my $ValueKey ( sort { lc $Values{$a} cmp lc $Values{$b} } keys %Values ) {
+            push @{$Data}, {
+                Key   => $ValueKey,
+                Value => $Values{$ValueKey}
+            };
+        }
+    }
+
+    # define if column filter values should be translatable
+    my $TranslationOption = 0;
+
+    if (
+        $Param{ColumnName} eq 'State'
+        || $Param{ColumnName} eq 'Lock'
+        || $Param{ColumnName} eq 'Priority'
+        )
+    {
+        $TranslationOption = 1;
+    }
+
+    # build select HTML
+    my $JSON = $LayoutObject->BuildSelectionJSON(
+        [
+            {
+                Name         => 'ColumnFilter' . $Param{ColumnName} . $Param{DashboardName},
+                Data         => $Data,
+                Class        => 'ColumnFilter',
+                Sort         => 'AlphanumericKey',
+                TreeView     => 1,
+                SelectedID   => $Param{SelectedValue},
+                Translation  => $TranslationOption,
+                AutoComplete => 'off',
+            },
+        ],
+    );
+
+    return $JSON;
 }
 
 sub _SearchParamsGet {
@@ -1318,30 +2344,16 @@ sub _SearchParamsGet {
 
     # check for default settings
     my @Columns;
-    if (
-        $Self->{Config}->{DefaultColumns}
-        && IsHashRefWithData( $Self->{Config}->{DefaultColumns} )
-        )
-    {
+    if ( $Self->{Config}->{DefaultColumns} && IsHashRefWithData( $Self->{Config}->{DefaultColumns} ) ) {
         @Columns = grep { $Self->{Config}->{DefaultColumns}->{$_} eq '2' }
-# ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
-# ---
-#             sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
-            sort { $Self->_DefaultColumnSortTicketSearchProfile() } keys %{ $Self->{Config}->{DefaultColumns} };
-# ---
+            sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
     }
     if ($PreferencesColumn) {
         if ( $PreferencesColumn->{Columns} && %{ $PreferencesColumn->{Columns} } ) {
             @Columns = grep {
                 defined $PreferencesColumn->{Columns}->{$_}
                     && $PreferencesColumn->{Columns}->{$_} eq '1'
-# ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
-# ---
-#             } sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
-            } sort { $Self->_DefaultColumnSortTicketSearchProfile() } keys %{ $Self->{Config}->{DefaultColumns} };
-# ---
+            } sort { $Self->_DefaultColumnSort() } keys %{ $Self->{Config}->{DefaultColumns} };
         }
         if ( $PreferencesColumn->{Order} && @{ $PreferencesColumn->{Order} } ) {
             @Columns = @{ $PreferencesColumn->{Order} };
@@ -1372,7 +2384,7 @@ sub _SearchParamsGet {
 # ---
 #     # also always set ProcessID and ActivityID (for process widgets)
 #     if ( $Self->{Config}->{IsProcessWidget} ) {
-#
+
 #         my @AlwaysColumns = (
 #             'DynamicField_' . $Self->{ProcessManagementProcessID},
 #             'DynamicField_' . $Self->{ProcessManagementActivityID},
@@ -1565,10 +2577,15 @@ sub _SearchParamsGet {
 #         }
 #     }
 #
+#     my %LockList = $Kernel::OM->Get('Kernel::System::Lock')->LockList(
+#         UserID => $Self->{UserID},
+#     );
+#     my %LockName2ID = reverse %LockList;
+#
 #     my %TicketSearchSummary = (
 #         Locked => {
 #             OwnerIDs => $TicketSearch{OwnerIDs} // [ $Self->{UserID}, ],
-#             LockIDs => [ '2', '3' ],    # 'lock' and 'tmp_lock'
+#             LockIDs  => [ $LockName2ID{lock}, $LockName2ID{tmp_lock} ],
 #         },
 #         Watcher => {
 #             WatchUserIDs => [ $Self->{UserID}, ],
@@ -1576,7 +2593,7 @@ sub _SearchParamsGet {
 #         },
 #         Responsible => {
 #             ResponsibleIDs => $TicketSearch{ResponsibleIDs} // [ $Self->{UserID}, ],
-#             LockIDs        => $TicketSearch{LockIDs}        // undef,
+#             LockIDs => $TicketSearch{LockIDs} // undef,
 #         },
 #         MyQueues => {
 #             QueueIDs => \@MyQueues,
@@ -1589,9 +2606,24 @@ sub _SearchParamsGet {
 #         },
 #         All => {
 #             OwnerIDs => $TicketSearch{OwnerIDs} // undef,
-#             LockIDs  => $TicketSearch{LockIDs}  // undef,
+#             LockIDs  => $TicketSearch{LockIDs} // undef,
 #         },
 #     );
+#
+#     if ( $Self->{Action} eq 'AgentCustomerUserInformationCenter' ) {
+#
+#         # Add filters for assigend and accessible tickets for the customer user information center as a
+#         #   additional filter together with the other filters. One of them must be always active.
+#         %TicketSearchSummary = (
+#             AssignedToCustomerUser => {
+#                 CustomerUserLoginRaw => $Param{CustomerUserID} // undef,
+#             },
+#             AccessibleForCustomerUser => {
+#                 CustomerUserID => $Param{CustomerUserID} // undef,
+#             },
+#             %TicketSearchSummary,
+#         );
+#     }
 #
 #     if ( defined $TicketSearch{LockIDs} || defined $TicketSearch{Locks} ) {
 #         delete $TicketSearchSummary{Locked};
@@ -1645,6 +2677,7 @@ sub _SearchParamsGet {
         Base      => 'TicketSearch',
         UserLogin => $UserLogin,
     );
+    $SearchProfiles{'last-search'} = 1;
 
     my @CurrentSearchProfiles;
     my %TicketSearchSummary;
@@ -1656,6 +2689,11 @@ sub _SearchParamsGet {
             Name      => $SearchProfileName,
             UserLogin => $UserLogin,
         );
+
+        if ( $SearchProfileName eq 'last-search' ) {
+            $CurrentSearchProfile{Znuny4OTRSSaveDashboard} = 1;
+        }
+
         next PROFILE if !%CurrentSearchProfile;
         next PROFILE if !$CurrentSearchProfile{Znuny4OTRSSaveDashboard};
 
@@ -1672,49 +2710,21 @@ sub _SearchParamsGet {
         # save profile name for cache check
         push @CurrentSearchProfiles, $SearchProfileName;
     }
-
-    # check cache
-    my $Summary = $CacheObject->Get(
-        Type => 'Dashboard',
-        Key  => $Self->{CacheKey} . '-Summary',
-    );
-
-    # check if we have to clean up the cache
-    # in cases the search profiles have changed
-    if ( IsHashRefWithData($Summary) ) {
-
-        my @CachedSearchProfiles  = grep { $_ !~ m{::Selected\z}xms } sort keys %{ $Summary };
-
-        my $CacheDiffers = DataIsDifferent(
-            Data1 => \@CachedSearchProfiles,
-            Data2 => \@CurrentSearchProfiles,
-        );
-
-        if ( $CacheDiffers ) {
-
-            $CacheObject->Delete(
-                Type => 'Dashboard',
-                Key  => $Self->{CacheKey} . '-Summary',
-            );
-        }
-    }
 # ---
 
     return (
         Columns             => \@Columns,
         TicketSearch        => \%TicketSearch,
         TicketSearchSummary => \%TicketSearchSummary,
-    );
-}
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-# i can not explain why but in case of inherited sort functions
-# we get in trouble with undefined sort params $a and $b.
-# so i copied the _DefaultColumnSort function and renamed it to
-# prevent inherited stuff and then it works.
+        CurrentSearchProfiles => \@CurrentSearchProfiles,
+# ---
+    );
+}
 
-sub _DefaultColumnSortTicketSearchProfile {
+sub _DefaultColumnSort {
     my ( $Self, %Param ) = @_;
 
     my %DefaultColumns = (
@@ -1766,8 +2776,5 @@ sub _DefaultColumnSortTicketSearchProfile {
     # otherwise do a numerical comparison with the ticket attributes
     return $DefaultColumns{$a} <=> $DefaultColumns{$b};
 }
-# ---
 
 1;
-
-=back
