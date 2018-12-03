@@ -362,10 +362,11 @@ sub SearchProfileGroupList {
     );
     return if !$UserID;
 
-    my %UserGroups = $GroupObject->PermissionUserGroupGet(
+    my %UserGroups = $GroupObject->PermissionUserGet(
         UserID => $UserID,
         Type   => 'rw',
     );
+
     my @UserGroups = sort keys %UserGroups;
     return if !@UserGroups;
 
@@ -437,7 +438,7 @@ sub SearchProfileGroupParamGet {
     );
     return if !$UserID;
 
-    my %UserGroups = $GroupObject->PermissionUserGroupGet(
+    my %UserGroups = $GroupObject->PermissionUserGet(
         UserID => $UserID,
         Type   => 'rw',
     );
