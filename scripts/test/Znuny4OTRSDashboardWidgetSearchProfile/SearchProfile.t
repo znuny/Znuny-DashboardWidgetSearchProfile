@@ -32,11 +32,11 @@ my $ZnunyHelperObject   = $Kernel::OM->Get('Kernel::System::ZnunyHelper');
 #
 
 my %UserData1 = $HelperObject->TestUserDataGet(
-    Groups => [ 'admin', 'users' ],
+    Groups   => [ 'admin', 'users' ],
     Language => 'de'
 );
 my %UserData2 = $HelperObject->TestUserDataGet(
-    Groups => [ 'admin', 'users' ],
+    Groups   => [ 'admin', 'users' ],
     Language => 'de'
 );
 
