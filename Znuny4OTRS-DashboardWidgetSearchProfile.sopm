@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny4OTRS-DashboardWidgetSearchProfile</Name>
-    <Version>5.0.1</Version>
+    <Version>6.0.1</Version>
+    <ChangeLog Version="6.0.1" Date="2018-12-03 16:07:59 +0100">Initial release for OTRS 6.</ChangeLog>
     <ChangeLog Version="5.0.1" Date="2017-09-27 16:22:24 +0200">Initial release 5.0.x.</ChangeLog>
     <Framework>6.0.x</Framework>
     <PackageRequired Version="6.0.35">Znuny4OTRS-Repo</PackageRequired>
