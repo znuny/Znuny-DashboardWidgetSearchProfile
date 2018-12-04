@@ -651,36 +651,8 @@ sub Run {
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-
     if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
         $Self->{Filter} = 'last-search';
-    }
-
-    # check cache
-    my $SummarySearchProfiles = $CacheObject->Get(
-        Type => 'Dashboard',
-        Key  => $CacheKey . '-Summary',
-    );
-
-    # check if we have to clean up the cache
-    # in cases the search profiles have changed
-    if ( IsHashRefWithData($SummarySearchProfiles) ) {
-
-        my @CachedSearchProfiles  = grep { $_ !~ m{::Selected\z}xms } sort keys %{ $SummarySearchProfiles };
-        my @CurrentSearchProfiles = sort @{ $SearchParams{CurrentSearchProfiles} || [] };
-
-        my $CacheDiffers = DataIsDifferent(
-            Data1 => \@CachedSearchProfiles,
-            Data2 => \@CachedSearchProfiles,
-        );
-
-        if ( $CacheDiffers ) {
-
-            $CacheObject->Delete(
-                Type => 'Dashboard',
-                Key  => $CacheKey . '-Summary',
-            );
-        }
     }
 # ---
 
@@ -772,17 +744,14 @@ sub Run {
             # Execute search.
             else {
                 @TicketIDsArray = $TicketObject->TicketSearch(
+                    %TicketSearch,
+                    %{ $TicketSearchSummary{ $Self->{Filter} } },
+                    %ColumnFilter,
+                    Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#                     %TicketSearch,
-#                     %{ $TicketSearchSummary{ $Self->{Filter} } },
-#                     %ColumnFilter,
-#                     Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
-                      %ColumnFilter,
-                      %TicketSearch,
-                      %{ $TicketSearchSummary{ $Self->{Filter} } },
-                      Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
+                    Result => 'ARRAY',
 # ---
                 );
             }
@@ -880,17 +849,6 @@ sub Run {
                         %TicketSearch,
                         %{ $TicketSearchSummary{$Type} },
                         %ColumnFilter,
-# ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
-# ---
-#                         %TicketSearch,
-#                         %{ $TicketSearchSummary{$Type} },
-#                         %ColumnFilter,
-#
-                          %ColumnFilter,
-                          %TicketSearch,
-                          %{ $TicketSearchSummary{$Type} },
-# ---
                     ) || 0;
                 }
             }
@@ -2384,7 +2342,7 @@ sub _SearchParamsGet {
 # ---
 #     # also always set ProcessID and ActivityID (for process widgets)
 #     if ( $Self->{Config}->{IsProcessWidget} ) {
-
+#
 #         my @AlwaysColumns = (
 #             'DynamicField_' . $Self->{ProcessManagementProcessID},
 #             'DynamicField_' . $Self->{ProcessManagementActivityID},
@@ -2460,91 +2418,91 @@ sub _SearchParamsGet {
         }
     }
 
+    # get queue object
+    my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
+
+    STRING:
+    for my $String (@Params) {
+        next STRING if !$String;
+        my ( $Key, $Value ) = split /=/, $String;
+
+        if ( $Key eq 'CustomerID' ) {
+            $Key = "CustomerIDRaw";
+        }
+
+        # push ARRAYREF attributes directly in an ARRAYREF
+        if (
+            $Key
+            =~ /^(StateType|StateTypeIDs|Queues|QueueIDs|Types|TypeIDs|States|StateIDs|Priorities|PriorityIDs|Services|ServiceIDs|SLAs|SLAIDs|Locks|LockIDs|OwnerIDs|ResponsibleIDs|WatchUserIDs|ArchiveFlags|CreatedUserIDs|CreatedTypes|CreatedTypeIDs|CreatedPriorities|CreatedPriorityIDs|CreatedStates|CreatedStateIDs|CreatedQueues|CreatedQueueIDs)$/
+            )
+        {
+            if ( $Value =~ m{,}smx ) {
+                push @{ $TicketSearch{$Key} }, split( /,/, $Value );
+            }
+            else {
+                push @{ $TicketSearch{$Key} }, $Value;
+            }
+        }
+
+        # check if parameter is a dynamic field and capture dynamic field name (with DynamicField_)
+        # in $1 and the Operator in $2
+        # possible Dynamic Fields options include:
+        #   DynamicField_NameX_Equals=123;
+        #   DynamicField_NameX_Like=value*;
+        #   DynamicField_NameX_GreaterThan=2001-01-01 01:01:01;
+        #   DynamicField_NameX_GreaterThanEquals=2001-01-01 01:01:01;
+        #   DynamicField_NameX_SmallerThan=2002-02-02 02:02:02;
+        #   DynamicField_NameX_SmallerThanEquals=2002-02-02 02:02:02;
+        elsif ( $Key =~ m{\A (DynamicField_.+?) _ (.+?) \z}sxm ) {
+
+            # prevent adding ProcessManagement search parameters (for ProcessWidget)
+            if ( $Self->{Config}->{IsProcessWidget} ) {
+                next STRING if $2 eq $Self->{ProcessManagementProcessID};
+                next STRING if $2 eq $Self->{ProcessManagementActivityID};
+            }
+
+            push @{ $DynamicFieldsParameters{$1}->{$2} }, $Value;
+        }
+
+        elsif ( !defined $TicketSearch{$Key} ) {
+
+            # change sort by, if needed
+            if (
+                $Key eq 'SortBy'
+                && $Self->{SortBy}
+                && $Self->{ValidSortableColumns}->{ $Self->{SortBy} }
+                )
+            {
+                $Value = $Self->{SortBy};
+            }
+            elsif ( $Key eq 'SortBy' && !$Self->{ValidSortableColumns}->{$Value} ) {
+                $Value = 'Age';
+            }
+            $TicketSearch{$Key} = $Value;
+        }
+        elsif ( !ref $TicketSearch{$Key} ) {
+            my $ValueTmp = $TicketSearch{$Key};
+            $TicketSearch{$Key} = [$ValueTmp];
+            push @{ $TicketSearch{$Key} }, $Value;
+        }
+        else {
+            push @{ $TicketSearch{$Key} }, $Value;
+        }
+    }
+    %TicketSearch = (
+        %TicketSearch,
+        %DynamicFieldsParameters,
+        Permission => $Self->{Config}->{Permission} || 'ro',
+        UserID => $Self->{UserID},
+    );
+
+    # CustomerInformationCenter shows data per CustomerID
+    if ( $Param{CustomerID} ) {
+        $TicketSearch{CustomerIDRaw} = $Param{CustomerID};
+    }
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
-#     # get queue object
-#     my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
-#
-#     STRING:
-#     for my $String (@Params) {
-#         next STRING if !$String;
-#         my ( $Key, $Value ) = split /=/, $String;
-#
-#         if ( $Key eq 'CustomerID' ) {
-#             $Key = "CustomerIDRaw";
-#         }
-#
-#         # push ARRAYREF attributes directly in an ARRAYREF
-#         if (
-#             $Key
-#             =~ /^(StateType|StateTypeIDs|Queues|QueueIDs|Types|TypeIDs|States|StateIDs|Priorities|PriorityIDs|Services|ServiceIDs|SLAs|SLAIDs|Locks|LockIDs|OwnerIDs|ResponsibleIDs|WatchUserIDs|ArchiveFlags|CreatedUserIDs|CreatedTypes|CreatedTypeIDs|CreatedPriorities|CreatedPriorityIDs|CreatedStates|CreatedStateIDs|CreatedQueues|CreatedQueueIDs)$/
-#             )
-#         {
-#             if ( $Value =~ m{,}smx ) {
-#                 push @{ $TicketSearch{$Key} }, split( /,/, $Value );
-#             }
-#             else {
-#                 push @{ $TicketSearch{$Key} }, $Value;
-#             }
-#         }
-#
-#         # check if parameter is a dynamic field and capture dynamic field name (with DynamicField_)
-#         # in $1 and the Operator in $2
-#         # possible Dynamic Fields options include:
-#         #   DynamicField_NameX_Equals=123;
-#         #   DynamicField_NameX_Like=value*;
-#         #   DynamicField_NameX_GreaterThan=2001-01-01 01:01:01;
-#         #   DynamicField_NameX_GreaterThanEquals=2001-01-01 01:01:01;
-#         #   DynamicField_NameX_SmallerThan=2002-02-02 02:02:02;
-#         #   DynamicField_NameX_SmallerThanEquals=2002-02-02 02:02:02;
-#         elsif ( $Key =~ m{\A (DynamicField_.+?) _ (.+?) \z}sxm ) {
-#
-#             # prevent adding ProcessManagement search parameters (for ProcessWidget)
-#             if ( $Self->{Config}->{IsProcessWidget} ) {
-#                 next STRING if $2 eq $Self->{ProcessManagementProcessID};
-#                 next STRING if $2 eq $Self->{ProcessManagementActivityID};
-#             }
-#
-#             push @{ $DynamicFieldsParameters{$1}->{$2} }, $Value;
-#         }
-#
-#         elsif ( !defined $TicketSearch{$Key} ) {
-#
-#             # change sort by, if needed
-#             if (
-#                 $Key eq 'SortBy'
-#                 && $Self->{SortBy}
-#                 && $Self->{ValidSortableColumns}->{ $Self->{SortBy} }
-#                 )
-#             {
-#                 $Value = $Self->{SortBy};
-#             }
-#             elsif ( $Key eq 'SortBy' && !$Self->{ValidSortableColumns}->{$Value} ) {
-#                 $Value = 'Age';
-#             }
-#             $TicketSearch{$Key} = $Value;
-#         }
-#         elsif ( !ref $TicketSearch{$Key} ) {
-#             my $ValueTmp = $TicketSearch{$Key};
-#             $TicketSearch{$Key} = [$ValueTmp];
-#             push @{ $TicketSearch{$Key} }, $Value;
-#         }
-#         else {
-#             push @{ $TicketSearch{$Key} }, $Value;
-#         }
-#     }
-#     %TicketSearch = (
-#         %TicketSearch,
-#         %DynamicFieldsParameters,
-#         Permission => $Self->{Config}->{Permission} || 'ro',
-#         UserID => $Self->{UserID},
-#     );
-#
-#     # CustomerInformationCenter shows data per CustomerID
-#     if ( $Param{CustomerID} ) {
-#         $TicketSearch{CustomerIDRaw} = $Param{CustomerID};
-#     }
 #
 #     # define filter attributes
 #     my @MyQueues = $QueueObject->GetAllCustomQueues(
@@ -2646,15 +2604,20 @@ sub _SearchParamsGet {
 #         delete $TicketSearchSummary{MyServices};
 #     }
 
-    my $ConfigObject        = $Kernel::OM->Get('Kernel::Config');
-    my $SearchProfileObject = $Kernel::OM->Get('Kernel::System::SearchProfile');
-    my $UserObject          = $Kernel::OM->Get('Kernel::System::User');
+    my $ArticleObject       = $Kernel::OM->Get('Kernel::System::Ticket::Article');
     my $CacheObject         = $Kernel::OM->Get('Kernel::System::Cache');
+    my $ConfigObject        = $Kernel::OM->Get('Kernel::Config');
+    my $DynamicFieldObject  = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $LayoutObject        = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $SearchProfileObject = $Kernel::OM->Get('Kernel::System::SearchProfile');
+    my $TicketObject        = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $UserObject          = $Kernel::OM->Get('Kernel::System::User');
 
     # taken from AgentTicketSearch
     my $Config = $ConfigObject->Get('Ticket::Frontend::AgentTicketSearch');
 
     %TicketSearch = (
+        %TicketSearch,
         Permission          => $Self->{Config}->{Permission} || 'ro',
         UserID              => $Self->{UserID},
         ConditionInline     => $Config->{ExtendedSearchCondition},
@@ -2679,7 +2642,12 @@ sub _SearchParamsGet {
     );
     $SearchProfiles{'last-search'} = 1;
 
-    my @CurrentSearchProfiles;
+    # get the dynamic fields for ticket object
+    my $DynamicField = $DynamicFieldObject->DynamicFieldListGet(
+        Valid       => 1,
+        ObjectType  => [ 'Ticket', 'Article' ],
+    );
+
     my %TicketSearchSummary;
     PROFILE:
     for my $SearchProfileName ( sort keys %SearchProfiles ) {
@@ -2705,10 +2673,202 @@ sub _SearchParamsGet {
             }
         }
 
-        $TicketSearchSummary{ $SearchProfileName } = \%CurrentSearchProfile;
+        my %TimeMap = (
+            ArticleCreate    => 'ArticleTime',
+            TicketCreate     => 'Time',
+            TicketChange     => 'ChangeTime',
+            TicketLastChange => 'LastChangeTime',
+            TicketClose      => 'CloseTime',
+            TicketPending    => 'PendingTime',
+            TicketEscalation => 'EscalationTime',
+        );
 
-        # save profile name for cache check
-        push @CurrentSearchProfiles, $SearchProfileName;
+        for my $TimeType ( sort keys %TimeMap ) {
+
+            # get create time settings
+            if ( !$CurrentSearchProfile{ $TimeMap{$TimeType} . 'SearchType' } ) {
+
+                # do nothing with time stuff
+            }
+            elsif ( $CurrentSearchProfile{ $TimeMap{$TimeType} . 'SearchType' } eq 'TimeSlot' ) {
+                for my $Key (qw(Month Day)) {
+                    $CurrentSearchProfile{ $TimeType . 'TimeStart' . $Key }
+                        = sprintf( "%02d", $CurrentSearchProfile{ $TimeType . 'TimeStart' . $Key } );
+                    $CurrentSearchProfile{ $TimeType . 'TimeStop' . $Key }
+                        = sprintf( "%02d", $CurrentSearchProfile{ $TimeType . 'TimeStop' . $Key } );
+                }
+                if (
+                    $CurrentSearchProfile{ $TimeType . 'TimeStartDay' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimeStartMonth' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimeStartYear' }
+                    )
+                {
+                    my $DateTimeObject = $Kernel::OM->Create(
+                        'Kernel::System::DateTime',
+                        ObjectParams => {
+                            Year   => $CurrentSearchProfile{ $TimeType . 'TimeStartYear' },
+                            Month  => $CurrentSearchProfile{ $TimeType . 'TimeStartMonth' },
+                            Day    => $CurrentSearchProfile{ $TimeType . 'TimeStartDay' },
+                            Hour   => 0,                                           # midnight
+                            Minute => 0,
+                            Second => 0,
+                            TimeZone => $Self->{UserTimeZone} || Kernel::System::DateTime->UserDefaultTimeZoneGet(),
+                        },
+                    );
+
+                    # Convert start time to local system time zone.
+                    $DateTimeObject->ToOTRSTimeZone();
+                    $CurrentSearchProfile{ $TimeType . 'TimeNewerDate' } = $DateTimeObject->ToString();
+                }
+                if (
+                    $CurrentSearchProfile{ $TimeType . 'TimeStopDay' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimeStopMonth' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimeStopYear' }
+                    )
+                {
+                    my $DateTimeObject = $Kernel::OM->Create(
+                        'Kernel::System::DateTime',
+                        ObjectParams => {
+                            Year   => $CurrentSearchProfile{ $TimeType . 'TimeStopYear' },
+                            Month  => $CurrentSearchProfile{ $TimeType . 'TimeStopMonth' },
+                            Day    => $CurrentSearchProfile{ $TimeType . 'TimeStopDay' },
+                            Hour   => 23,                                         # just before midnight
+                            Minute => 59,
+                            Second => 59,
+                            TimeZone => $Self->{UserTimeZone} || Kernel::System::DateTime->UserDefaultTimeZoneGet(),
+                        },
+                    );
+
+                    # Convert stop time to local system time zone.
+                    $DateTimeObject->ToOTRSTimeZone();
+                    $CurrentSearchProfile{ $TimeType . 'TimeOlderDate' } = $DateTimeObject->ToString();
+                }
+            }
+            elsif ( $CurrentSearchProfile{ $TimeMap{$TimeType} . 'SearchType' } eq 'TimePoint' ) {
+                if (
+                    $CurrentSearchProfile{ $TimeType . 'TimePoint' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimePointStart' }
+                    && $CurrentSearchProfile{ $TimeType . 'TimePointFormat' }
+                    )
+                {
+                    my $Time = 0;
+                    if ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'minute' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' };
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'hour' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' } * 60;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'day' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' } * 60 * 24;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'week' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' } * 60 * 24 * 7;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'month' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' } * 60 * 24 * 30;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointFormat' } eq 'year' ) {
+                        $Time = $CurrentSearchProfile{ $TimeType . 'TimePoint' } * 60 * 24 * 365;
+                    }
+                    if ( $CurrentSearchProfile{ $TimeType . 'TimePointStart' } eq 'Before' ) {
+
+                        # more than ... ago
+                        $CurrentSearchProfile{ $TimeType . 'TimeOlderMinutes' } = $Time;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointStart' } eq 'Next' ) {
+
+                        # within next
+                        $CurrentSearchProfile{ $TimeType . 'TimeNewerMinutes' } = 0;
+                        $CurrentSearchProfile{ $TimeType . 'TimeOlderMinutes' } = -$Time;
+                    }
+                    elsif ( $CurrentSearchProfile{ $TimeType . 'TimePointStart' } eq 'After' ) {
+
+                        # in more then ...
+                        $CurrentSearchProfile{ $TimeType . 'TimeNewerMinutes' } = -$Time;
+                    }
+                    else {
+
+                        # within last ...
+                        $CurrentSearchProfile{ $TimeType . 'TimeOlderMinutes' } = 0;
+                        $CurrentSearchProfile{ $TimeType . 'TimeNewerMinutes' } = $Time;
+                    }
+                }
+            }
+        }
+
+
+
+        # prepare archive flag
+        if ( $ConfigObject->Get('Ticket::ArchiveSystem') ) {
+
+            $CurrentSearchProfile{SearchInArchive} ||= '';
+            if ( $CurrentSearchProfile{SearchInArchive} eq 'AllTickets' ) {
+                $CurrentSearchProfile{ArchiveFlags} = [ 'y', 'n' ];
+            }
+            elsif ( $CurrentSearchProfile{SearchInArchive} eq 'ArchivedTickets' ) {
+                $CurrentSearchProfile{ArchiveFlags} = ['y'];
+            }
+            else {
+                $CurrentSearchProfile{ArchiveFlags} = ['n'];
+            }
+        }
+
+        my %AttributeLookup;
+
+        # create attribute lookup table
+        for my $Attribute ( @{ $CurrentSearchProfile{ShownAttributes} || [] } ) {
+            $AttributeLookup{$Attribute} = 1;
+        }
+
+        # dynamic fields search parameters for ticket search
+        my %DynamicFieldSearchParameters;
+
+        # cycle trough the activated Dynamic Fields for this screen
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( @{$DynamicField} ) {
+            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+            # get search field preferences
+            my $SearchFieldPreferences = $BackendObject->SearchFieldPreferences(
+                DynamicFieldConfig => $DynamicFieldConfig,
+            );
+
+            next DYNAMICFIELD if !IsArrayRefWithData($SearchFieldPreferences);
+
+            PREFERENCE:
+            for my $Preference ( @{$SearchFieldPreferences} ) {
+
+                if (
+                    !$AttributeLookup{
+                        'LabelSearch_DynamicField_'
+                            . $DynamicFieldConfig->{Name}
+                            . $Preference->{Type}
+                    }
+                    )
+                {
+                    next PREFERENCE;
+                }
+
+                # extract the dynamic field value from the profile
+                my $SearchParameter = $BackendObject->SearchFieldParameterBuild(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    Profile            => \%CurrentSearchProfile,
+                    LayoutObject       => $LayoutObject,
+                    Type               => $Preference->{Type},
+                );
+
+                # set search parameter
+                if ( defined $SearchParameter ) {
+                    $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
+                        = $SearchParameter->{Parameter};
+                }
+            }
+        }
+
+        $TicketSearchSummary{ $SearchProfileName } = {
+            %CurrentSearchProfile,
+            %DynamicFieldSearchParameters,
+        };
     }
 # ---
 
@@ -2716,11 +2876,6 @@ sub _SearchParamsGet {
         Columns             => \@Columns,
         TicketSearch        => \%TicketSearch,
         TicketSearchSummary => \%TicketSearchSummary,
-# ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
-# ---
-        CurrentSearchProfiles => \@CurrentSearchProfiles,
-# ---
     );
 }
 
