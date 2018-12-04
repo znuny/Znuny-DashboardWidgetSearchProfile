@@ -165,6 +165,7 @@ sub SearchProfileAdd {
 
     return 1 if $Param{Loop};
 
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
     my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # get value for dashboard save state
@@ -239,6 +240,9 @@ sub SearchProfileAdd {
         );
     }
 
+    $CacheObject->CleanUp(
+        Type => 'Dashboard',
+    );
 # ---
 
     return 1;
@@ -543,6 +547,8 @@ sub SearchProfileDelete {
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     if ( !$Param{Loop} ) {
         my %SearchProfileGroupParamGet = $Self->SearchProfileGroupParamGet(%Param);
         if (%SearchProfileGroupParamGet) {
@@ -550,6 +556,10 @@ sub SearchProfileDelete {
                 %Param,
                 %SearchProfileGroupParamGet,
                 Loop => 1,
+            );
+
+            $CacheObject->CleanUp(
+                Type => 'Dashboard',
             );
         }
     }
