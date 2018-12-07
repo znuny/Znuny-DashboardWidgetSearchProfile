@@ -77,7 +77,7 @@ sub Run {
     }
 
     # get user groups
-    my %PermissionUserGroupGetReverse = reverse $GroupObject->PermissionUserGroupGet(
+    my %PermissionUserGetReverse = reverse $GroupObject->PermissionUserGet(
         UserID => $LayoutObject->{UserID},
         Type   => 'rw',
     );
@@ -86,7 +86,7 @@ sub Run {
     my $IsAdmin = 0;
     GROUP:
     for my $Group (@SearchProfileGroupAdminList) {
-        next GROUP if !$PermissionUserGroupGetReverse{$Group};
+        next GROUP if !$PermissionUserGetReverse{$Group};
 
         $IsAdmin = 1;
 

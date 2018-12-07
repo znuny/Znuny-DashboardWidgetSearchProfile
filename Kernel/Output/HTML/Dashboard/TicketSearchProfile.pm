@@ -2796,8 +2796,6 @@ sub _SearchParamsGet {
             }
         }
 
-
-
         # prepare archive flag
         if ( $ConfigObject->Get('Ticket::ArchiveSystem') ) {
 
