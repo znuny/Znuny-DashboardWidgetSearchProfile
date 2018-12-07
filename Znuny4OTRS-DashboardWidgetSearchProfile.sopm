@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny4OTRS-DashboardWidgetSearchProfile</Name>
-    <Version>6.0.2</Version>
+    <Version>6.0.3</Version>
+    <ChangeLog Version="6.0.3" Date="2018-12-07 12:24:52 +0100">Fixed issue #1 - Group can't be selected.</ChangeLog>
     <ChangeLog Version="6.0.2" Date="2018-12-04 15:17:02 +0100">- Improved cache deletion.&#13;
 - Fixed sorting for columns.&#13;
 - Fixed missing calculation of dynamic fields and date ticket data for ticket search.&#13;
