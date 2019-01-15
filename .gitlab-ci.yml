@@ -1,17 +1,20 @@
 image: registry.znuny.com/znuny/docker-otrs6ci:latest
 
-services:
-  - name: registry.znuny.com/znuny/docker-mysql-utf8:latest
-    alias: mysql
+
 
 stages:
   - test
 
 job_unit_otrs_Znuny4OTRSDashboardWidgetSearchProfile:
   stage: test
+  services:
+    - name: docker.io/elgalu/selenium:latest
+    - name: registry.znuny.com/znuny/docker-mysql-utf8:latest
+      alias: mysql
   script:
     - env
     - pwd
     - /run.sh
     - su -c "perl /opt/otrs/bin/otrs.Console.pl Znuny4OTRS::AdvancedPackageManager::InstallSOPM /opt/otrs/Znuny4OTRS-DashboardWidgetSearchProfile.sopm" -s /bin/bash otrs
-    - su -c "perl /opt/otrs/bin/otrs.Console.pl Dev::UnitTest::Run --verbose --test Znuny4OTRSDashboardWidgetSearchProfile/SearchProfile" -s /bin/bash otrs
+    - su -c "perl /opt/otrs/bin/otrs.Console.pl Dev::UnitTest::Run --verbose --test Znuny4OTRSDashboardWidgetSearchProfile/Selenium/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile" -s /bin/bash otrs
+    - su -c "perl /opt/otrs/bin/otrs.Console.pl Dev::UnitTest::Run --verbose --test Znuny4OTRSDashboardWidgetSearchProfile/System/SearchProfile" -s /bin/bash otrs

@@ -1,4 +1,4 @@
-# Suchvorlagen Übersichts Widget
+# Funktionalität
 
 Im OTRS Standard gibt es keine Möglichkeit die Suchvorlagen der Tichetsuche des jeweiligen Agenten in der Übersicht als Widget zu verwenden. Diese Erweiterung beinhaltet die Funktionalität eines Übersichtswidget, in dem der jeweilige Agent zwischen seinen Suchervorlagen und der letzten ausgeführten Suche wählen kann.
 

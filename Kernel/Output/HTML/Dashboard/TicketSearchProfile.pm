@@ -1,6 +1,6 @@
 # --
-# Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2018 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+# Copyright (C) 2012-2019 Znuny GmbH, http://znuny.com/
 # --
 # $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
@@ -1965,10 +1965,23 @@ sub Run {
                     ObjectID           => $TicketID,
                 );
 
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+                my $ValueMaxChars = 20;
+                if ( $Self->{Config}->{DynamicField_ValueMaxChars} ) {
+                    $ValueMaxChars = int $Self->{Config}->{DynamicField_ValueMaxChars};
+                }
+# ---
                 my $ValueStrg = $BackendObject->DisplayValueRender(
                     DynamicFieldConfig => $DynamicFieldConfig,
                     Value              => $Value,
-                    ValueMaxChars      => 20,
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+#                     ValueMaxChars      => 20,
+                    ValueMaxChars      => $ValueMaxChars,
+# ---
                     LayoutObject       => $LayoutObject,
                 );
 
