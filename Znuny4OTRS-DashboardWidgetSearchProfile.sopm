@@ -23,7 +23,8 @@
         <File Permission="660" Location="Kernel/Output/HTML/Dashboard/TicketSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketSearchProfile.tt"/>
-        <File Permission="660" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/SearchProfile.t"/>
+        <File Permission="660" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/Selenium/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile.t"/>
+        <File Permission="660" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/System/SearchProfile.t"/>
         <File Permission="660" Location="var/httpd/htdocs/js/Core.Agent.Search.js"/>
     </Filelist>
 </otrs_package>

@@ -50,6 +50,7 @@
                     </Hash>
                 </Item>
                 <Item Key="Mandatory">0</Item>
+                <Item Key="DynamicField_ValueMaxChars">20</Item>
             </Hash>
         </Value>
     </Setting>
