@@ -1,10 +1,13 @@
-image: otrs5ci
+image: registry.znuny.com/znuny/docker-otrs5ci:latest
 
 stages:
   - test
 
-job_unit_otrs_Znuny4OTRSDashboardWidgetSearchProfile:
+mysql:
   stage: test
+  services:
+    - name: registry.znuny.com/znuny/docker-mysql-utf8:latest
+      alias: mysql
   script:
     - env
     - pwd

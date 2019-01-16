@@ -1,9 +1,9 @@
-# Suchvorlagen Übersichts Widget
+# Funktionalität
 
-Im OTRS Standard gibt es keine Möglichkeit die Suchvorlagen der Tichetsuche des jeweiligen Agenten in der Übersicht als Widget zu verwenden. Diese Erweiterung beinhaltet die Funktionalität eines Übersichtswidget, in dem der jeweilige Agent zwischen seinen Suchervorlagen und der letzten ausgeführten Suche wählen kann.
+Dieses Paket erweitert OTRS um ein Dashboard-Widget, welches die Suchergebnisse der gespeicherten Suchprofile jedes Agenten anzeigt. Zwischen den einzelnen Profilen kann mit einem Klick gewechselt werden.
 
-![Suchvorlagen Widget](doc/de/images/widget.png)
+![Suchvorlagen Widget](doc/de/images/widget_de.png)
 
-Das Widget kann über die SysConfig "DashboardBackend###0001-SearchProfile" nach belieben angepasst werden, analog zu bestehenden Widgets. Für den Einsatz bedarf es keine weitere Konfiguration, das Widget kann nach der Installation der Erweiterung verwendet werden.
+Zusätzlich ist es möglich, Suchprofile für einzelne Gruppen bereitzustellen.
 
-Jedem Agenten stehen seine persönlichen Suchvorlagen der Ticketsuche zur Verfügung.
+![Suchvorlagen gruppenbasiert](doc/de/images/search_profile_group_de.png)
