@@ -23,6 +23,7 @@ sub Data {
     $Self->{Translation}->{'Save search for dashboard'} = 'Suche für Dashboard speichern';
     $Self->{Translation}->{'Save search for group'} = 'Suche für Gruppe speichern';
     $Self->{Translation}->{'This configuration defines the groups which are able to define groups for search profiles.'} = 'Diese Konfiguration definiert Gruppen, welche berechtigt sind Gruppen für Suchprofile zu deifnieren.';
+    $Self->{Translation}->{'This configuration defines the groups which permissions will be restricted to readonly in the dashboard view (no settings and filters for the widget).'} = 'Diese Konfiguration definiert Gruppen, deren Rechte auf Leserechte beschränkt werden in der Dashboard Übersicht (Keine Einstellungen und Filter für das Widget).';
 
     return 1;
 }

@@ -5,7 +5,7 @@ image: registry.znuny.com/znuny/docker-otrs6ci:latest
 stages:
   - test
 
-job_unit_otrs_Znuny4OTRSDashboardWidgetSearchProfile:
+mysql:
   stage: test
   services:
     - name: docker.io/elgalu/selenium:latest

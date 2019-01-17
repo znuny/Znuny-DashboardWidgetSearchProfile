@@ -8,7 +8,7 @@
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::ObjectManagerDirectCall)
+## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::CodeStyle::ObjectManagerDirectCall)
 
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
@@ -1160,6 +1160,65 @@ sub Run {
         Key   => 'HeaderColumn' . $WidgetName,
         Value => \@Columns
     );
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+
+    # special behaviour for the fitler of the dashboard.
+    # if the user has only "ro" permissions for the filter of the dashboard then
+    # we will only show the search content but no ability to filter the data
+    my $ShowPreferencesButton = 1;
+    if ( IsArrayRefWithData($TicketSearchSummary{ $Self->{Filter} }->{Znuny4OTRSSaveGroups} ) ) {
+
+        my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+        my $GroupObject  = $Kernel::OM->Get('Kernel::System::Group');
+
+        # get group administrators
+        my @SearchProfileGroupAdminList
+            = @{ $ConfigObject->Get('Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
+        my @SearchProfileGroupROList
+            = @{ $ConfigObject->Get('Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly') || [] };
+
+        # get user groups
+        my %PermissionUserGet = $GroupObject->PermissionUserGet(
+            UserID => $LayoutObject->{UserID},
+            Type   => 'rw',
+        );
+        my %PermissionUserGetReverse = reverse %PermissionUserGet;
+
+        # check if the user is group admin
+        my $IsAdmin = 0;
+        GROUP:
+        for my $Group (@SearchProfileGroupAdminList) {
+            next GROUP if !$PermissionUserGetReverse{$Group};
+
+            $IsAdmin = 1;
+
+            last GROUP;
+        }
+
+        my %GroupsReverse = reverse $GroupObject->GroupList(
+            Valid => 1,
+        );
+
+        my $Permission = 'rw';
+        FILTERGROUP:
+        for my $GroupID ( @{ $TicketSearchSummary{ $Self->{Filter} }->{Znuny4OTRSSaveGroups} } ) {
+            my $GroupIsReadonly = grep { $GroupsReverse{$_} == $GroupID } @SearchProfileGroupROList;
+
+            next FILTERGROUP if !$GroupIsReadonly;
+
+            $Permission = 'ro';
+
+            last FILTERGROUP;
+        }
+
+        if ( $Permission ne 'rw' && !$IsAdmin ) {
+            $Self->{ValidFilterableColumns} = {};
+            $ShowPreferencesButton = 0;
+        }
+    }
+# ---
 
     # show all needed headers
     HEADERCOLUMN:
@@ -2065,6 +2124,33 @@ sub Run {
         },
     );
 
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+
+    # we need to hide the preference button of the complete widget if the user
+    # has no rw permissions for the group where he got the search profile from.
+    my $PreferencesButtonJS = <<ZNUUNY;
+\$('div#Dashboard$Self->{Name}-box').find('div.WidgetAction.Settings').hide();
+ZNUUNY
+
+    if ( $ShowPreferencesButton ) {
+
+        $PreferencesButtonJS = <<ZNUUNY;
+\$('div#Dashboard$Self->{Name}-box').find('div.WidgetAction.Settings').show();
+ZNUUNY
+    }
+
+    my $InlineJS;
+    if ( $Param{AJAX} ) {
+        $InlineJS = $PreferencesButtonJS;
+    }
+    else {
+        $LayoutObject->AddJSOnDocumentComplete(
+            Code => $PreferencesButtonJS,
+        );
+    }
+# ---
     my $Content = $LayoutObject->Output(
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
@@ -2081,6 +2167,11 @@ sub Run {
             AdditionalFilter => $Self->{AdditionalFilter},
             CustomerID       => $Self->{CustomerID},
             CustomerUserID   => $Self->{CustomerUserID},
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+            InlineJS => $InlineJS,
+# ---
         },
         AJAX => $Param{AJAX},
     );
