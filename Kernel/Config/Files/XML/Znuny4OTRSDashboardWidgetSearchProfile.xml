@@ -77,4 +77,13 @@
             </Array>
         </Value>
     </Setting>
+    <Setting Name="Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly" Required="1" Valid="1">
+        <Description Translatable="1">This configuration defines the groups which permissions will be restricted to readonly in the dashboard view (no settings and filters for the widget).</Description>
+        <Navigation>Core</Navigation>
+        <Value>
+            <Array>
+                <Item></Item>
+            </Array>
+        </Value>
+    </Setting>
 </otrs_config>
