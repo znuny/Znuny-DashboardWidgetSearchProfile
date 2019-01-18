@@ -404,11 +404,11 @@ Core.Agent.Search = (function (TargetNS) {
 // ---
 // Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                if ($('#SaveDashboard').length > 0) {
-                    $('#SaveDashboard').parent().hide().prev().hide().prev().hide();
+                if ($('#Znuny4OTRSSaveDashboard').length > 0) {
+                    $('#Znuny4OTRSSaveDashboard').parent().hide().prev().hide().prev().hide();
                 }
-                if ($('#SaveGroups').length > 0) {
-                    $('#SaveGroups').parent().hide().prev().hide().prev().hide();
+                if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                    $('#Znuny4OTRSSaveGroups').parent().hide().prev().hide().prev().hide();
                 }
 // ---
 
@@ -446,11 +446,11 @@ Core.Agent.Search = (function (TargetNS) {
 // ---
 // Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                    if ($('#SaveDashboard').length > 0 && (!GroupProfiles[ProfileName] || IsAdmin)) {
-                        $('#SaveDashboard').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveDashboard').length > 0 && (!GroupProfiles[ProfileName] || IsAdmin)) {
+                        $('#Znuny4OTRSSaveDashboard').parent().show().prev().show().prev().show();
                     }
-                    if ($('#SaveGroups').length > 0) {
-                        $('#SaveGroups').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                        $('#Znuny4OTRSSaveGroups').parent().show().prev().show().prev().show();
                     }
 // ---
 
@@ -592,11 +592,11 @@ Core.Agent.Search = (function (TargetNS) {
 // ---
 // Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                    if ($('#SaveDashboard').length > 0) {
-                        $('#SaveDashboard').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveDashboard').length > 0) {
+                        $('#Znuny4OTRSSaveDashboard').parent().show().prev().show().prev().show();
                     }
-                    if ($('#SaveGroups').length > 0) {
-                        $('#SaveGroups').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                        $('#Znuny4OTRSSaveGroups').parent().show().prev().show().prev().show();
                     }
 // ---
 

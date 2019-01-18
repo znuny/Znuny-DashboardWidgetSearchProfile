@@ -19,3 +19,10 @@ There is a possibility to set the dashboard readonly and changeable for specific
 For this functionality you just need to set the group name for the following SysConfig option:
 
 `Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly`
+
+## Logged-in user id in dashboard configuration
+
+In the SysConfig of the dashboard `DashboardBackend###0001-SearchProfile` it is possible to set the base search attributes for the dasboard in the key "Attributes". To set the attributes
+based on the current logged in user id it is possible to use the placeholder `##UserID`. Example:
+
+`StateType=open;ResponsibleIDs=##UserID##`

@@ -2390,7 +2390,17 @@ sub _SearchParamsGet {
     # get all search base attributes
     my %TicketSearch;
     my %DynamicFieldsParameters;
-    my @Params = split /;/, $Self->{Config}->{Attributes};
+# ---
+# Znuny4OTRS-DashboardWidgetSearchProfile
+# ---
+#     my @Params = split /;/, $Self->{Config}->{Attributes};
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $ConfigAttributes = $Self->{Config}->{Attributes};
+    $ConfigAttributes =~ s/\#\#UserID\#\#/$LayoutObject->{UserID}/xmsig;
+
+    my @Params = split /;/, $ConfigAttributes;
+# ---
 
     # read user preferences and config to get columns that
     # should be shown in the dashboard widget (the preferences
@@ -2712,7 +2722,6 @@ sub _SearchParamsGet {
     my $CacheObject         = $Kernel::OM->Get('Kernel::System::Cache');
     my $ConfigObject        = $Kernel::OM->Get('Kernel::Config');
     my $DynamicFieldObject  = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $LayoutObject        = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $SearchProfileObject = $Kernel::OM->Get('Kernel::System::SearchProfile');
     my $TicketObject        = $Kernel::OM->Get('Kernel::System::Ticket');
     my $UserObject          = $Kernel::OM->Get('Kernel::System::User');

@@ -96,8 +96,8 @@ sub Run {
     # prepare group selection
     my $SaveGroupsSelection = $LayoutObject->BuildSelection(
         Data         => \%Groups,
-        Name         => 'SaveGroups',
-        ID           => 'SaveGroups',
+        Name         => 'Znuny4OTRSSaveGroups',
+        ID           => 'Znuny4OTRSSaveGroups',
         Multiple     => 1,
         Size         => 1,
         Class        => 'Modernize',
@@ -113,7 +113,7 @@ sub Run {
             <div class="Clear"></div>
             <label>$SaveDashboardLabel:</label>
             <div class="Field">
-                <input type="checkbox" name="SaveDashboard" id="SaveDashboard" value="1"$SelectedSaveDashboard />
+                <input type="checkbox" name="Znuny4OTRSSaveDashboard" id="Znuny4OTRSSaveDashboard" value="1"$SelectedSaveDashboard />
             </div>
 ZNUUNY
     my $OptionsSaveGroupsHTML = <<ZNUUNY;
