@@ -169,16 +169,18 @@ sub SearchProfileAdd {
     my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # get value for dashboard save state
-    my $SaveDashboard = $ParamObject->GetParam( Param => 'SaveDashboard' ) || 0;
-    my $Profile       = $ParamObject->GetParam( Param => 'Profile' )       || '';
-    my $SaveProfile   = $ParamObject->GetParam( Param => 'SaveProfile' )   || 0;
-    my @SaveGroups    = sort $ParamObject->GetArray(
-        Param => 'SaveGroups',
+    my $SaveDashboard  = $ParamObject->GetParam( Param => 'Znuny4OTRSSaveDashboard' ) || 0;
+    my $Profile        = $ParamObject->GetParam( Param => 'Profile' )                 || '';
+    my $SaveProfile    = $ParamObject->GetParam( Param => 'SaveProfile' )             || 0;
+    my $TakeLastSearch = $ParamObject->GetParam( Param => 'TakeLastSearch' )          || 0;
+    my @SaveGroups     = sort $ParamObject->GetArray(
+        Param => 'Znuny4OTRSSaveGroups',
     );
 
     return 1 if !$SaveProfile;
     return 1 if $Param{Base} ne 'TicketSearch';
     return 1 if $Profile ne $Param{Name};
+    return 1 if $TakeLastSearch;
 
     # get old profile if given
     my %SearchProfileData = $Self->SearchProfileGet(

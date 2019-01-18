@@ -70,11 +70,11 @@ $UnitTestParamObject->ParamSet(
     Value => 'blub',
 );
 $UnitTestParamObject->ParamSet(
-    Name  => 'SaveDashboard',
+    Name  => 'Znuny4OTRSSaveDashboard',
     Value => 1,
 );
 $UnitTestParamObject->ParamSet(
-    Name  => 'SaveGroups',
+    Name  => 'Znuny4OTRSSaveGroups',
     Value => [
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),

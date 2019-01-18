@@ -19,3 +19,10 @@ Es gibt die Möglichkeit das Dashboard für bestimmte Gruppe nur lesbar und nich
 Möglichkeit die Einstellungen oder Filter des Widgets zu verändern. Hierfür muss die jeweilige Gruppe in die folgende SysConfig-Option eingetragen werden:
 
 `Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly`
+
+## Einloggte UserID in der Dashboard Konfiguration
+
+In der SysConfig des Dashboards `DashboardBackend###0001-SearchProfile` können für die Suche im Wert "Attributes" Einschränkungen hinterlegt werden. Um die Suchattribute basierend
+auf der UserID des aktuell eingeloggten Users aufzubauen kann man den Platzhalter `##UserID##` verwenden. Beispiel:
+
+`StateType=open;ResponsibleIDs=##UserID##`
