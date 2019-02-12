@@ -26,3 +26,11 @@ In the SysConfig of the dashboard `DashboardBackend###0001-SearchProfile` it is 
 based on the current logged in user id it is possible to use the placeholder `##UserID`. Example:
 
 `StateType=open;ResponsibleIDs=##UserID##`
+
+## Truncating dynamic field values
+
+There is a possibilty to truncate the values for the dynamic fields in the dashboard. Change the value of `DynamicField_ValueMaxChars` of the SysConfig `DashboardBackend###0001-SearchProfile` to modify the behaviour.
+
+## Hide last search
+
+For performance reason it can be useful to hide the last search of the dashboard. Change the value of `SearchProfile_LastSearch` of the SysConfig `DashboardBackend###0001-SearchProfile` to modify the behaviour.
