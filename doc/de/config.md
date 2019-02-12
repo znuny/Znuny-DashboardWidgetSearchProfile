@@ -26,3 +26,11 @@ In der SysConfig des Dashboards `DashboardBackend###0001-SearchProfile` können 
 auf der UserID des aktuell eingeloggten Users aufzubauen kann man den Platzhalter `##UserID##` verwenden. Beispiel:
 
 `StateType=open;ResponsibleIDs=##UserID##`
+
+## Kürzung der Werte von dynamischen Feldern
+
+Es gibt die Möglichkeit die Kürzung der dynamischen Feldwerte zu beeinflussen. Dazu muss der Wert `DynamicField_ValueMaxChars` der SysConfig `DashboardBackend###0001-SearchProfile` angepasst werden.
+
+## Letzte Suche ausblenden
+
+Aus Performance-Gründen kann es sinnvoll sein, die letzte Suche aus dem Dashboard auszublenden. Dazu muss der Wert `SearchProfile_LastSearch` der SysConfig `DashboardBackend###0001-SearchProfile` angepasst werden.
