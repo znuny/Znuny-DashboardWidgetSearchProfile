@@ -51,6 +51,7 @@
                 </Item>
                 <Item Key="Mandatory">0</Item>
                 <Item Key="DynamicField_ValueMaxChars">20</Item>
+                <Item Key="SearchProfile_LastSearch">1</Item>
             </Hash>
         </Value>
     </Setting>

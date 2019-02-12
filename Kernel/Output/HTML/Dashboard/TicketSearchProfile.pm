@@ -652,7 +652,14 @@ sub Run {
 # Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
     if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
-        $Self->{Filter} = 'last-search';
+
+        if ( $Self->{Config}->{SearchProfile_LastSearch} ) {
+            $Self->{Filter} = 'last-search';
+        }
+        else {
+            $Self->{Filter} = (sort keys %TicketSearchSummary)[0];
+        }
+
     }
 # ---
 
@@ -990,7 +997,9 @@ sub Run {
     # last-search is at the last position
     my %SearchProfiles = %{ $Summary };
     my @SearchProfiles = grep { $_ ne 'last-search' } sort keys %SearchProfiles;
-    push @SearchProfiles, 'last-search';
+    if ( $Self->{Config}->{SearchProfile_LastSearch} ) {
+        push @SearchProfiles, 'last-search';
+    }
 
     # display the search profiles in a list
     PROFILE:
@@ -2753,7 +2762,27 @@ sub _SearchParamsGet {
         Base      => 'TicketSearch',
         UserLogin => $UserLogin,
     );
-    $SearchProfiles{'last-search'} = 1;
+
+    # be sure that last-search is given if activated
+    # and removed if not
+    if ( $Self->{Config}->{SearchProfile_LastSearch} ) {
+        $SearchProfiles{'last-search'} = 1;
+    }
+    else {
+        delete $SearchProfiles{'last-search'};
+    }
+
+    # if last search is deactivated and there is no profile
+    # then we set an empty search in and skip everything
+    if (!%SearchProfiles) {
+        return (
+            Columns             => \@Columns,
+            TicketSearch        => \%TicketSearch,
+            TicketSearchSummary => {
+                Default => {},
+            },
+        );
+    }
 
     # get the dynamic fields for ticket object
     my $DynamicField = $DynamicFieldObject->DynamicFieldListGet(
