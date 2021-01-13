@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2012-2019 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -32,11 +32,11 @@ my $ZnunyHelperObject   = $Kernel::OM->Get('Kernel::System::ZnunyHelper');
 #
 
 my %UserData1 = $HelperObject->TestUserDataGet(
-    Groups => [ 'admin', 'users' ],
+    Groups   => [ 'admin', 'users' ],
     Language => 'de'
 );
 my %UserData2 = $HelperObject->TestUserDataGet(
-    Groups => [ 'admin', 'users' ],
+    Groups   => [ 'admin', 'users' ],
     Language => 'de'
 );
 
