@@ -1,6 +1,6 @@
 # --
-# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2019 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
+# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 # --
 # $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
@@ -657,9 +657,8 @@ sub Run {
             $Self->{Filter} = 'last-search';
         }
         else {
-            $Self->{Filter} = (sort keys %TicketSearchSummary)[0];
+            $Self->{Filter} = (sort keys %TicketSearchSummary)[0] || 'last-search';
         }
-
     }
 # ---
 
