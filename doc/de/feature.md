@@ -1,6 +1,6 @@
 # Funktionalität
 
-Dieses Paket erweitert OTRS um ein Dashboard-Widget, welches die Suchergebnisse der gespeicherten Suchprofile jedes Agenten anzeigt. Zwischen den einzelnen Profilen kann mit einem Klick gewechselt werden.
+Dieses Paket erweitert Znuny um ein Dashboard-Widget, welches die Suchergebnisse der gespeicherten Suchprofile jedes Agenten anzeigt. Zwischen den einzelnen Profilen kann mit einem Klick gewechselt werden.
 
 ![Suchvorlagen Widget](doc/de/images/widget_de.png)
 
