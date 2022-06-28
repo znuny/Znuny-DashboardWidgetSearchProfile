@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny-DashboardWidgetSearchProfile</Name>
-    <Version>6.0.9</Version>
+    <Version>6.3.1</Version>
+    <ChangeLog Version="6.3.1" Date="2022-06-28 15:21:38 +0200">Initial release for Znuny 6.3.</ChangeLog>
     <ChangeLog Version="6.0.9" Date="2021-01-14 14:12:45 +0100">Fixed bug: Use of uninitialized value in concatenation (.) - $Self-&gt;{Filter}</ChangeLog>
     <ChangeLog Version="6.0.8" Date="2019-02-12 14:45:09 +0100">Improved documentation.</ChangeLog>
     <ChangeLog Version="6.0.7" Date="2019-02-12 12:51:48 +0100">Added functionality to disable the last search profile for the dashboard.</ChangeLog>
@@ -46,5 +47,5 @@
         $Kernel::OM->Get('var::packagesetup::ZnunyDashboardWidgetSearchProfile')->CodeUpgrade();
     ]]></CodeUpgrade>
 
-    <PackageMerge Name="Znuny4OTRS-DashboardWidgetSearchProfile" TargetVersion="6.0.9"></PackageMerge>
+    <PackageMerge Name="Znuny4OTRS-DashboardWidgetSearchProfile" TargetVersion="6.0.9"/>
 </otrs_package>
