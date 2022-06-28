@@ -1,17 +1,17 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
 # --
-# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::CodeStyle::ObjectManagerDirectCall)
+## nofilter(TidyAll::Plugin::OTRS::Znuny::CodeStyle::ObjectManagerDirectCall)
 
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 # package Kernel::Output::HTML::Dashboard::TicketGeneric;
 package Kernel::Output::HTML::Dashboard::TicketSearchProfile;
@@ -333,10 +333,8 @@ sub new {
     if ( $Self->{Config}->{IsProcessWidget} ) {
 
         # get process management configuration
-        $Self->{ProcessManagementProcessID}
-            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementProcessID');
-        $Self->{ProcessManagementActivityID}
-            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementActivityID');
+        $Self->{ProcessManagementProcessID}  = $ConfigObject->Get('Process::DynamicFieldProcessManagementProcessID');
+        $Self->{ProcessManagementActivityID} = $ConfigObject->Get('Process::DynamicFieldProcessManagementActivityID');
 
         # get the list of processes in the system
         my $ProcessListHash = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessList(
@@ -649,7 +647,7 @@ sub Run {
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
     if ( !defined $TicketSearchSummary{ $Self->{Filter} } ) {
 
@@ -755,7 +753,7 @@ sub Run {
                     %ColumnFilter,
                     Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
                     Result => 'ARRAY',
 # ---
@@ -897,7 +895,7 @@ sub Run {
     );
 
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 #
@@ -1032,7 +1030,7 @@ sub Run {
         next COLUMNNAME if !$GetColumnFilter{$ColumnName};
         $ColumnFilterLink
             .= ';' . $LayoutObject->Ascii2Html( Text => 'ColumnFilter' . $ColumnName )
-            . '=' . $LayoutObject->Ascii2Html( Text => $GetColumnFilter{$ColumnName} );
+            . '=' . $LayoutObject->LinkEncode( $GetColumnFilter{$ColumnName} );
     }
 
     my $LinkPage =
@@ -1090,7 +1088,7 @@ sub Run {
     $LayoutObject->AddJSData(
         Key   => 'InitContainerDashboard' . $Self->{Name},
         Value => {
-            SortBy => $Self->{SortBy} || 'Age',
+            SortBy  => $Self->{SortBy} || 'Age',
             OrderBy => $TicketSearch{OrderBy},
         },
     );
@@ -1169,23 +1167,23 @@ sub Run {
         Value => \@Columns
     );
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 
     # special behaviour for the fitler of the dashboard.
     # if the user has only "ro" permissions for the filter of the dashboard then
     # we will only show the search content but no ability to filter the data
     my $ShowPreferencesButton = 1;
-    if ( IsArrayRefWithData($TicketSearchSummary{ $Self->{Filter} }->{Znuny4OTRSSaveGroups} ) ) {
+    if ( IsArrayRefWithData($TicketSearchSummary{ $Self->{Filter} }->{ProfileGroupIDs} ) ) {
 
         my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
         my $GroupObject  = $Kernel::OM->Get('Kernel::System::Group');
 
         # get group administrators
         my @SearchProfileGroupAdminList
-            = @{ $ConfigObject->Get('Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
+            = @{ $ConfigObject->Get('ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
         my @SearchProfileGroupROList
-            = @{ $ConfigObject->Get('Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly') || [] };
+            = @{ $ConfigObject->Get('ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly') || [] };
 
         # get user groups
         my %PermissionUserGet = $GroupObject->PermissionUserGet(
@@ -1211,7 +1209,7 @@ sub Run {
 
         my $Permission = 'rw';
         FILTERGROUP:
-        for my $GroupID ( @{ $TicketSearchSummary{ $Self->{Filter} }->{Znuny4OTRSSaveGroups} } ) {
+        for my $GroupID ( @{ $TicketSearchSummary{ $Self->{Filter} }->{ProfileGroupIDs} } ) {
             my $GroupIsReadonly = grep { $GroupsReverse{$_} == $GroupID } @SearchProfileGroupROList;
 
             next FILTERGROUP if !$GroupIsReadonly;
@@ -1601,7 +1599,7 @@ sub Run {
                     Name => 'ContentLargeTicketGenericHeaderColumn',
                     Data => {
                         HeaderColumnName => $DynamicFieldName || '',
-                        CSS => $CSS || '',
+                        CSS              => $CSS              || '',
                     },
                 );
 
@@ -1730,7 +1728,7 @@ sub Run {
                     Name => 'ContentLargeTicketGenericHeaderColumn',
                     Data => {
                         HeaderColumnName => $DynamicFieldName || '',
-                        CSS => $CSS || '',
+                        CSS              => $CSS              || '',
                     },
                 );
 
@@ -2033,7 +2031,7 @@ sub Run {
                 );
 
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
                 my $ValueMaxChars = 20;
                 if ( $Self->{Config}->{DynamicField_ValueMaxChars} ) {
@@ -2044,7 +2042,7 @@ sub Run {
                     DynamicFieldConfig => $DynamicFieldConfig,
                     Value              => $Value,
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #                     ValueMaxChars      => 20,
                     ValueMaxChars      => $ValueMaxChars,
@@ -2133,7 +2131,7 @@ sub Run {
     );
 
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 
     # we need to hide the preference button of the complete widget if the user
@@ -2161,7 +2159,7 @@ ZNUUNY
 # ---
     my $Content = $LayoutObject->Output(
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #         TemplateFile => 'AgentDashboardTicketGeneric',
 #
@@ -2176,7 +2174,7 @@ ZNUUNY
             CustomerID       => $Self->{CustomerID},
             CustomerUserID   => $Self->{CustomerUserID},
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
             InlineJS => $InlineJS,
 # ---
@@ -2352,7 +2350,7 @@ sub _ColumnFilterJSON {
 
         my %Values = %{ $Param{ColumnValues} };
 
-        # set possible values
+        # Set possible values.
         for my $ValueKey ( sort { lc $Values{$a} cmp lc $Values{$b} } keys %Values ) {
             push @{$Data}, {
                 Key   => $ValueKey,
@@ -2399,7 +2397,7 @@ sub _SearchParamsGet {
     my %TicketSearch;
     my %DynamicFieldsParameters;
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #     my @Params = split /;/, $Self->{Config}->{Attributes};
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -2460,7 +2458,7 @@ sub _SearchParamsGet {
     }
 
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #     # also always set ProcessID and ActivityID (for process widgets)
 #     if ( $Self->{Config}->{IsProcessWidget} ) {
@@ -2615,7 +2613,7 @@ sub _SearchParamsGet {
         %TicketSearch,
         %DynamicFieldsParameters,
         Permission => $Self->{Config}->{Permission} || 'ro',
-        UserID => $Self->{UserID},
+        UserID     => $Self->{UserID},
     );
 
     # CustomerInformationCenter shows data per CustomerID
@@ -2623,7 +2621,7 @@ sub _SearchParamsGet {
         $TicketSearch{CustomerIDRaw} = $Param{CustomerID};
     }
 # ---
-# Znuny4OTRS-DashboardWidgetSearchProfile
+# Znuny-DashboardWidgetSearchProfile
 # ---
 #
 #     # define filter attributes
@@ -2673,7 +2671,7 @@ sub _SearchParamsGet {
 #         },
 #         Responsible => {
 #             ResponsibleIDs => $TicketSearch{ResponsibleIDs} // [ $Self->{UserID}, ],
-#             LockIDs => $TicketSearch{LockIDs} // undef,
+#             LockIDs        => $TicketSearch{LockIDs}        // undef,
 #         },
 #         MyQueues => {
 #             QueueIDs => \@MyQueues,
@@ -2686,7 +2684,7 @@ sub _SearchParamsGet {
 #         },
 #         All => {
 #             OwnerIDs => $TicketSearch{OwnerIDs} // undef,
-#             LockIDs  => $TicketSearch{LockIDs} // undef,
+#             LockIDs  => $TicketSearch{LockIDs}  // undef,
 #         },
 #     );
 #
@@ -2800,11 +2798,11 @@ sub _SearchParamsGet {
         );
 
         if ( $SearchProfileName eq 'last-search' ) {
-            $CurrentSearchProfile{Znuny4OTRSSaveDashboard} = 1;
+            $CurrentSearchProfile{ShowInDashboardWidget} = 1;
         }
 
         next PROFILE if !%CurrentSearchProfile;
-        next PROFILE if !$CurrentSearchProfile{Znuny4OTRSSaveDashboard};
+        next PROFILE if !$CurrentSearchProfile{ShowInDashboardWidget};
 
         # prepare full text search
         if ( $CurrentSearchProfile{Fulltext} ) {
@@ -3003,6 +3001,16 @@ sub _SearchParamsGet {
                 }
             }
         }
+
+        # Add param for group restrictions
+        my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+        my %Groups = $GroupObject->PermissionUserGet(
+            UserID => $Self->{UserID},
+            Type   => 'ro',
+        );
+        $CurrentSearchProfile{ProfileGroupIDs} = [
+            sort keys %Groups,
+        ];
 
         $TicketSearchSummary{ $SearchProfileName } = {
             %CurrentSearchProfile,
