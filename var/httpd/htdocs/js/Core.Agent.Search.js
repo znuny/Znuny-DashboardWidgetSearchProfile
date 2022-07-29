@@ -1,8 +1,8 @@
 // --
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-// Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
+// Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 // --
-// $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -389,7 +389,7 @@ Core.Agent.Search = (function (TargetNS) {
                     AllowAutoGrow: true
                 });
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
                 var GroupProfiles = Core.Config.Get('SearchProfilesGrouped');
                 var IsAdmin       = Core.Config.Get('SearchProfileGroupAdmin');
@@ -402,13 +402,13 @@ Core.Agent.Search = (function (TargetNS) {
                 // hide save changes in template block
                 $('#SaveProfile').parent().hide().prev().hide().prev().hide();
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                if ($('#ShowInDashboardWidget').length > 0) {
-                    $('#ShowInDashboardWidget').parent().hide().prev().hide().prev().hide();
+                if ($('#Znuny4OTRSSaveDashboard').length > 0) {
+                    $('#Znuny4OTRSSaveDashboard').parent().hide().prev().hide().prev().hide();
                 }
-                if ($('#ProfileGroupIDs').length > 0) {
-                    $('#ProfileGroupIDs').parent().hide().prev().hide().prev().hide();
+                if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                    $('#Znuny4OTRSSaveGroups').parent().hide().prev().hide().prev().hide();
                 }
 // ---
 
@@ -417,13 +417,13 @@ Core.Agent.Search = (function (TargetNS) {
 
                     // show delete button
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
                     if (!GroupProfiles[ProfileName] || IsAdmin) {
 // ---
                     $('#SearchProfileDelete').show();
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
                     }
 // ---
@@ -433,24 +433,24 @@ Core.Agent.Search = (function (TargetNS) {
 
                     // show save changes in template block
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
                     if (!GroupProfiles[ProfileName] || IsAdmin) {
 // ---
                     $('#SaveProfile').parent().show().prev().show().prev().show();
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
                     }
 // ---
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                    if ($('#ShowInDashboardWidget').length > 0 && (!GroupProfiles[ProfileName] || IsAdmin)) {
-                        $('#ShowInDashboardWidget').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveDashboard').length > 0 && (!GroupProfiles[ProfileName] || IsAdmin)) {
+                        $('#Znuny4OTRSSaveDashboard').parent().show().prev().show().prev().show();
                     }
-                    if ($('#ProfileGroupIDs').length > 0) {
-                        $('#ProfileGroupIDs').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                        $('#Znuny4OTRSSaveGroups').parent().show().prev().show().prev().show();
                     }
 // ---
 
@@ -590,13 +590,13 @@ Core.Agent.Search = (function (TargetNS) {
                     // hide save changes in template block
                     $('#SaveProfile').parent().hide().prev().hide().prev().hide();
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                    if ($('#ShowInDashboardWidget').length > 0) {
-                        $('#ShowInDashboardWidget').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveDashboard').length > 0) {
+                        $('#Znuny4OTRSSaveDashboard').parent().show().prev().show().prev().show();
                     }
-                    if ($('#ProfileGroupIDs').length > 0) {
-                        $('#ProfileGroupIDs').parent().show().prev().show().prev().show();
+                    if ($('#Znuny4OTRSSaveGroups').length > 0) {
+                        $('#Znuny4OTRSSaveGroups').parent().show().prev().show().prev().show();
                     }
 // ---
 
@@ -617,7 +617,7 @@ Core.Agent.Search = (function (TargetNS) {
 
                     window.location.href = Core.Config.Get('Baselink') + 'Action=' + SearchProfileAction +
 // ---
-// Znuny-DashboardWidgetSearchProfile
+// Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
 //                     ';Subaction=Search;TakeLastSearch=1;SaveProfile=1;Profile=' + encodeURIComponent(SearchProfile);
                     ';Subaction=Search;TakeLastSearch=1;' + (!GroupProfiles[ProfileName] || IsAdmin ? 'SaveProfile=1' : '') + ';Profile=' + encodeURIComponent(SearchProfile);

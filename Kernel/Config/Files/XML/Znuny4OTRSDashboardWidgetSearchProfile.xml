@@ -55,12 +55,12 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="Frontend::Output::FilterElementPost###ZnunyDashboardWidgetSearchProfile" Required="0" Valid="1">
+    <Setting Name="Frontend::Output::FilterElementPost###Znuny4OTRSDashboardWidgetSearchProfile" Required="0" Valid="1">
         <Description Translatable="1">This configuration registers an OutputFilter module that shows the preference to save the profile for the dashboard or groups.</Description>
         <Navigation>Frontend::Base::OutputFilter</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::FilterElementPost::ZnunyDashboardWidgetSearchProfile</Item>
+                <Item Key="Module">Kernel::Output::HTML::FilterElementPost::Znuny4OTRSDashboardWidgetSearchProfile</Item>
                 <Item Key="Templates">
                     <Hash>
                         <Item Key="AgentTicketSearch">1</Item>
@@ -69,7 +69,7 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups" Required="1" Valid="1">
+    <Setting Name="Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups" Required="1" Valid="1">
         <Description Translatable="1">This configuration defines the groups which are able to define groups for search profiles.</Description>
         <Navigation>Core</Navigation>
         <Value>
@@ -78,7 +78,7 @@
             </Array>
         </Value>
     </Setting>
-    <Setting Name="ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly" Required="1" Valid="1">
+    <Setting Name="Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups::Readonly" Required="1" Valid="1">
         <Description Translatable="1">This configuration defines the groups which permissions will be restricted to readonly in the dashboard view (no settings and filters for the widget).</Description>
         <Navigation>Core</Navigation>
         <Value>

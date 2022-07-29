@@ -1,8 +1,8 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 # --
-# $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - Kernel/System/SearchProfile.pm
+# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/System/SearchProfile.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,13 +15,13 @@ package Kernel::System::SearchProfile;
 use strict;
 use warnings;
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 use Kernel::System::VariableCheck qw(:all);
 # ---
 
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 # our @ObjectDependencies = (
 #     'Kernel::System::Cache',
@@ -93,17 +93,17 @@ sub SearchProfileAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(Base Name Key UserLogin)) {
-        if ( !defined $Param{$Needed} ) {
+    for (qw(Base Name Key UserLogin)) {
+        if ( !defined $Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "Need $_!",
             );
             return;
         }
     }
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
     my %SearchProfileGroupParamGet = $Self->SearchProfileGroupParamGet(%Param);
     if (%SearchProfileGroupParamGet) {
@@ -145,7 +145,7 @@ sub SearchProfileAdd {
     }
 
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 #     # reset cache
 #     my $CacheKey = $Login . '::' . $Param{Name};
@@ -169,12 +169,12 @@ sub SearchProfileAdd {
     my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # get value for dashboard save state
-    my $SaveDashboard  = $ParamObject->GetParam( Param => 'ShowInDashboardWidget' ) || 0;
+    my $SaveDashboard  = $ParamObject->GetParam( Param => 'Znuny4OTRSSaveDashboard' ) || 0;
     my $Profile        = $ParamObject->GetParam( Param => 'Profile' )                 || '';
     my $SaveProfile    = $ParamObject->GetParam( Param => 'SaveProfile' )             || 0;
     my $TakeLastSearch = $ParamObject->GetParam( Param => 'TakeLastSearch' )          || 0;
-    my @NewGroups      = sort $ParamObject->GetArray(
-        Param => 'ProfileGroupIDs',
+    my @SaveGroups     = sort $ParamObject->GetArray(
+        Param => 'Znuny4OTRSSaveGroups',
     );
 
     return 1 if !$SaveProfile;
@@ -190,7 +190,7 @@ sub SearchProfileAdd {
     );
     return 1 if !%SearchProfileData;
 
-    my $CurrentDashboardValue = $SearchProfileData{ShowInDashboardWidget} || 0;
+    my $CurrentDashboardValue = $SearchProfileData{Znuny4OTRSSaveDashboard} || 0;
     if ( $CurrentDashboardValue != $SaveDashboard ) {
 
         # remove old key in profile if given
@@ -198,7 +198,7 @@ sub SearchProfileAdd {
             $Self->SearchProfileDelete(
                 Base      => $Param{Base},
                 Name      => $Param{Name},
-                Key       => 'ShowInDashboardWidget',
+                Key       => 'Znuny4OTRSSaveDashboard',
                 UserLogin => $Param{UserLogin},
             );
         }
@@ -207,17 +207,17 @@ sub SearchProfileAdd {
         $Self->SearchProfileAdd(
             Base      => $Param{Base},
             Name      => $Param{Name},
-            Key       => 'ShowInDashboardWidget',
+            Key       => 'Znuny4OTRSSaveDashboard',
             Value     => $SaveDashboard,
             UserLogin => $Param{UserLogin},
             Loop      => 1,
         );
     }
 
-    my @CurrentGroups = sort @{ $SearchProfileData{ProfileGroupIDs} || [] };
+    my @CurrentGroups = sort @{ $SearchProfileData{Znuny4OTRSSaveGroups} || [] };
     my $GroupsDifferent = DataIsDifferent(
         Data1 => \@CurrentGroups,
-        Data2 => \@NewGroups,
+        Data2 => \@SaveGroups,
     );
     if ($GroupsDifferent) {
 
@@ -226,7 +226,7 @@ sub SearchProfileAdd {
             $Self->SearchProfileDelete(
                 Base      => $Param{Base},
                 Name      => $Param{Name},
-                Key       => 'ProfileGroupIDs',
+                Key       => 'Znuny4OTRSSaveGroups',
                 UserLogin => $Param{UserLogin},
             );
         }
@@ -235,8 +235,8 @@ sub SearchProfileAdd {
         $Self->SearchProfileAdd(
             Base      => $Param{Base},
             Name      => $Param{Name},
-            Key       => 'ProfileGroupIDs',
-            Value     => \@NewGroups,
+            Key       => 'Znuny4OTRSSaveGroups',
+            Value     => \@SaveGroups,
             UserLogin => $Param{UserLogin},
             Loop      => 1,
         );
@@ -266,11 +266,11 @@ sub SearchProfileGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(Base Name UserLogin)) {
-        if ( !defined( $Param{$Needed} ) ) {
+    for (qw(Base Name UserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "Need $_!",
             );
             return;
         }
@@ -311,7 +311,7 @@ sub SearchProfileGet {
         }
     }
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
     if ( !$Param{Loop} ) {
         my %SearchProfileGroupGet = $Self->SearchProfileGroupGet(%Param);
@@ -330,7 +330,7 @@ sub SearchProfileGet {
     return %Result;
 }
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 
 =head2 SearchProfileGroupList()
@@ -390,7 +390,7 @@ sub SearchProfileGroupList {
     FROM
         search_profile
     WHERE
-        profile_key = 'ProfileGroupIDs' AND
+        profile_key = 'Znuny4OTRSSaveGroups' AND
         profile_value IN ($GroupListComma) AND
         login LIKE ?
 ZNUUNY
@@ -466,7 +466,7 @@ sub SearchProfileGroupParamGet {
         search_profile
     WHERE
         profile_name = ? AND
-        profile_key = 'ProfileGroupIDs' AND
+        profile_key = 'Znuny4OTRSSaveGroups' AND
         profile_value IN ($GroupListComma) AND
         login LIKE ?
 ZNUUNY
@@ -524,7 +524,7 @@ deletes a search profile.
         Base      => 'TicketSearch',
         Name      => 'last-search',
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
         Key => 'abc',                      # optional
 # ---
@@ -537,17 +537,17 @@ sub SearchProfileDelete {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(Base Name UserLogin)) {
-        if ( !$Param{$Needed} ) {
+    for (qw(Base Name UserLogin)) {
+        if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "Need $_!",
             );
             return;
         }
     }
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
@@ -575,7 +575,7 @@ sub SearchProfileDelete {
 
     # delete search profile
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 #     return if !$DBObject->Do(
 #         SQL => "
@@ -613,7 +613,7 @@ sub SearchProfileDelete {
 # ---
 
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 #     # delete cache
 #     my $CacheKey = $Login . '::' . $Param{Name};
@@ -650,11 +650,11 @@ sub SearchProfileList {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(Base UserLogin)) {
-        if ( !defined( $Param{$Needed} ) ) {
+    for (qw(Base UserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "Need $_!",
             );
             return;
         }
@@ -688,7 +688,7 @@ sub SearchProfileList {
         $Result{ $Data[0] } = $Data[0];
     }
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
     my %SearchProfileGroupList = $Self->SearchProfileGroupList(%Param);
     if (%SearchProfileGroupList) {
@@ -721,11 +721,11 @@ sub SearchProfileUpdateUserLogin {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(Base UserLogin NewUserLogin)) {
-        if ( !defined( $Param{$Needed} ) ) {
+    for (qw(Base UserLogin NewUserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!",
+                Message  => "Need $_!",
             );
             return;
         }
