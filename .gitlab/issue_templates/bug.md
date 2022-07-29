@@ -1,47 +1,43 @@
 ### Informationen
 
-<!-- if exists -->
-<!--
-*  Customer       ???
+<!-- falls vorhanden -->
+*  Kunde          ???
 *  Ticket#        ???
-*  Project#       ???
-*  ProjectBaller# ???
--->
+*  Projekt#       ???
+*  ProjektBaller# ???
 
-### Environment
- - Browser: [e. g. Chrome, Firefox, Safari]
- - Framework version [e. g. 6.0.15]
+### Beschreibung des erwarteten Verhaltens
+(Was soll eigentlich passieren?)
 
-### Expected behavior
+<!-- ![erwartete](erwartete.png) -->
 
-<!-- A clear and concise description of what you expected to happen. -->
+### Beschreibung des aktuellen Verhaltens
+(Zusammenfassung des Problems/Fehlers)
 
-### Actual behavior
+<!-- ![aktuell](aktuell.png) -->
 
-<!-- A clear and concise description of what happened (the issue/bug/problem). -->
+### Schritte zur Reproduktion des Problems
+(Wie kann man das Problem reproduzieren? Das ist sehr wichtig!)
 
-### How to reproduce
-<!-- (How to reproduce the problem? This is very important!) -->
-
-Steps to reproduce the behavior:
-
-1. Go to '...'
-2. Click on '...'
-3. Scroll down to '...'
-4. See error
-
-### Additional information
-
-<!-- Add any other information about the problem here. -->
+1. ...
+2. ...
 
 ### Screenshots
+Füge ggf. Screenshots hinzu, um das Problem zu erklären.
 
-<!-- If necessary, include screenshots to explain your problem. -->
+<!-- ![weitere Screenshots](Screenshots.png) -->
+
+### Environment
+ - OS: [e.g. Windows, MacOS, Linux]
+ - Browser: [e. g. Chrome, Firefox, Safari]
+ - OTRS version [e. g. 6.0.15]
+
+### Weitere Informationen
+Füge hier weitere Informationen zum Problem hinzu.
 
 ### VZ
-<!-- If possible, create a __[VZ](https://znuny.zammad.com/#vz_systems)__ here that exhibits or displays the problematic behavior and link the VZ here in the Issue. -->
+(Wenn möglich, erstelle hier eine __[VZ](https://znuny.zammad.com/#vz_systems)__, die das problematische Verhalten aufweist bzw. zeigt und verknüpfe die VZ hier im Issue.)
 
-<!--
-[vz???](http://vz???.test.znuny.com/otrs/index.pl) -->
+[vz???](http://vz???.test.znuny.com/otrs/index.pl)
 
 /label ~Bug

@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -70,11 +70,11 @@ $UnitTestParamObject->ParamSet(
     Value => 'blub',
 );
 $UnitTestParamObject->ParamSet(
-    Name  => 'ShowInDashboardWidget',
+    Name  => 'Znuny4OTRSSaveDashboard',
     Value => 1,
 );
 $UnitTestParamObject->ParamSet(
-    Name  => 'ProfileGroupIDs',
+    Name  => 'Znuny4OTRSSaveGroups',
     Value => [
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),
@@ -132,12 +132,12 @@ $Self->Is(
     'search profile contains the correct subject value',
 );
 $Self->Is(
-    $SearchProfileData{ShowInDashboardWidget},
+    $SearchProfileData{Znuny4OTRSSaveDashboard},
     '1',
     'search profile contains the correct dashboard value',
 );
 
-my @Data1 = sort @{ $SearchProfileData{ProfileGroupIDs} };
+my @Data1 = sort @{ $SearchProfileData{Znuny4OTRSSaveGroups} };
 my @Data2 = sort( (
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),
@@ -173,12 +173,12 @@ $Self->Is(
     'search profile contains the correct subject value',
 );
 $Self->Is(
-    $SearchProfileData{ShowInDashboardWidget},
+    $SearchProfileData{Znuny4OTRSSaveDashboard},
     '1',
     'search profile contains the correct dashboard value',
 );
 
-@Data1 = sort @{ $SearchProfileData{ProfileGroupIDs} };
+@Data1 = sort @{ $SearchProfileData{Znuny4OTRSSaveGroups} };
 @Data2 = sort( (
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),
@@ -285,12 +285,12 @@ $Self->Is(
     'search profile contains the correct subject value',
 );
 $Self->Is(
-    $SearchProfileData{ShowInDashboardWidget},
+    $SearchProfileData{Znuny4OTRSSaveDashboard},
     '1',
     'search profile contains the correct dashboard value',
 );
 
-@Data1 = sort @{ $SearchProfileData{ProfileGroupIDs} };
+@Data1 = sort @{ $SearchProfileData{Znuny4OTRSSaveGroups} };
 @Data2 = sort( (
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),
@@ -326,12 +326,12 @@ $Self->Is(
     'search profile contains the correct subject value',
 );
 $Self->Is(
-    $SearchProfileData{ShowInDashboardWidget},
+    $SearchProfileData{Znuny4OTRSSaveDashboard},
     '1',
     'search profile contains the correct dashboard value',
 );
 
-@Data1 = sort @{ $SearchProfileData{ProfileGroupIDs} };
+@Data1 = sort @{ $SearchProfileData{Znuny4OTRSSaveGroups} };
 @Data2 = sort( (
         $GroupObject->GroupLookup( Group => 'admin' ),
         $GroupObject->GroupLookup( Group => 'users' ),

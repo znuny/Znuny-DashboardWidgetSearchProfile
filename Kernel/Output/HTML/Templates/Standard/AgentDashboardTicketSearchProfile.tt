@@ -1,8 +1,8 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
 # --
-# $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
+# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@
 
     <ul class="Tab Actions">
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 # [% RenderBlockStart("ContentLargeTicketGenericFilterAssignedToCustomerUser") %]
 #         <li class="AdditionalFilter [% Data.item("AssignedToCustomerUser::Selected") | html %]"><a href="#" id="DashboardAdditionalFilter[% Data.Name | html %]AssignedToCustomerUser" data-filter="AssignedToCustomerUser">[% Translate("Assigned to customer user") | html %]</a></li>
@@ -201,7 +201,7 @@
 [% RenderBlockEnd("ContentLargeTicketGenericColumnTranslatable") %]
 [% RenderBlockStart("ContentLargeTicketGenericColumnTime") %]
                 <td>
-                    <div title="[% Data.GenericValue | Localize("TimeShort") | html %]">[% Data.GenericValue | Localize("TimeShort") | html %]</div>
+                    <div title="[% Data.GenericValue | Localize("TimeShort") | html %]">[% Data.GenericValue | Localize("TimeShort") %]</div>
                 </td>
 [% RenderBlockEnd("ContentLargeTicketGenericColumnTime") %]
 [% RenderBlockStart("ContentLargeTicketGenericColumnEscalation") %]
@@ -238,7 +238,7 @@
     </table>
 </form>
 # ---
-# Znuny-DashboardWidgetSearchProfile
+# Znuny4OTRS-DashboardWidgetSearchProfile
 # ---
 [% IF Data.InlineJS %]
 <script type="text/javascript">
