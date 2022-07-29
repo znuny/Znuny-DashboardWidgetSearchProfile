@@ -1,6 +1,6 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012-2022 Znuny GmbH, http://znuny.com/
 # --
 # $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
@@ -8,7 +8,7 @@
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::CodeStyle::ObjectManagerDirectCall)
+## nofilter(TidyAll::Plugin::Znuny4OTRS::CodeStyle::ObjectManagerDirectCall)
 
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
