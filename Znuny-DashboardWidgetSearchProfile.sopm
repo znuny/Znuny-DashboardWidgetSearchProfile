@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
-    <Name>Znuny4OTRS-DashboardWidgetSearchProfile</Name>
-    <Version>6.0.9</Version>
+    <Name>Znuny-DashboardWidgetSearchProfile</Name>
+    <Version>6.3.1</Version>
+    <ChangeLog Version="6.3.1" Date="2022-06-28 15:21:38 +0200">Initial release for Znuny 6.3.</ChangeLog>
     <ChangeLog Version="6.0.9" Date="2021-01-14 14:12:45 +0100">Fixed bug: Use of uninitialized value in concatenation (.) - $Self-&gt;{Filter}</ChangeLog>
     <ChangeLog Version="6.0.8" Date="2019-02-12 14:45:09 +0100">Improved documentation.</ChangeLog>
     <ChangeLog Version="6.0.7" Date="2019-02-12 12:51:48 +0100">Added functionality to disable the last search profile for the dashboard.</ChangeLog>
@@ -15,22 +16,36 @@
 - Fixed missing calculation of sysconfig configuration.</ChangeLog>
     <ChangeLog Version="6.0.1" Date="2018-12-03 16:07:59 +0100">Initial release for OTRS 6.</ChangeLog>
     <ChangeLog Version="5.0.1" Date="2017-09-27 16:22:24 +0200">Initial release 5.0.x.</ChangeLog>
-    <Framework>6.0.x</Framework>
-    <PackageRequired Version="6.0.35">Znuny4OTRS-Repo</PackageRequired>
+    <Framework>6.3.x</Framework>
     <Vendor>Znuny GmbH</Vendor>
     <URL>http://znuny.com/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
-    <Description Lang="en">This package contains the functionality to display a search profile widget in the overview.</Description>
-    <Description Lang="de">Dieses Paket enthält die Funktionalität um ein Suchvorlagen Widget in der Übersicht anzuzeigen.</Description>
+    <Description Lang="en">Displays a search profile widget in the overview.</Description>
+    <Description Lang="de">Zeigt Suchvorlagen-Widget in der Übersicht an.</Description>
     <Filelist>
         <File Permission="660" Location="Custom/Kernel/System/SearchProfile.pm"/>
-        <File Permission="660" Location="Kernel/Config/Files/XML/Znuny4OTRSDashboardWidgetSearchProfile.xml"/>
-        <File Permission="660" Location="Kernel/Language/de_Znuny4OTRSDashboardWidgetSearchProfile.pm"/>
+        <File Permission="660" Location="Kernel/Config/Files/XML/ZnunyDashboardWidgetSearchProfile.xml"/>
+        <File Permission="660" Location="Kernel/Language/de_ZnunyDashboardWidgetSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/Dashboard/TicketSearchProfile.pm"/>
-        <File Permission="660" Location="Kernel/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile.pm"/>
+        <File Permission="660" Location="Kernel/Output/HTML/FilterElementPost/ZnunyDashboardWidgetSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketSearchProfile.tt"/>
-        <File Permission="660" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/Selenium/Output/HTML/FilterElementPost/Znuny4OTRSDashboardWidgetSearchProfile.t"/>
-        <File Permission="660" Location="scripts/test/Znuny4OTRSDashboardWidgetSearchProfile/System/SearchProfile.t"/>
+        <File Permission="660" Location="scripts/test/ZnunyDashboardWidgetSearchProfile/Selenium/Output/HTML/FilterElementPost/ZnunyDashboardWidgetSearchProfile.t"/>
+        <File Permission="660" Location="scripts/test/ZnunyDashboardWidgetSearchProfile/System/SearchProfile.t"/>
         <File Permission="660" Location="var/httpd/htdocs/js/Core.Agent.Search.js"/>
+        <File Permission="660" Location="var/packagesetup/ZnunyDashboardWidgetSearchProfile.pm"/>
     </Filelist>
+    <CodeInstall Type="post"><![CDATA[
+        $Kernel::OM->Get('var::packagesetup::ZnunyDashboardWidgetSearchProfile')->CodeInstall();
+    ]]></CodeInstall>
+    <CodeReinstall Type="post"><![CDATA[
+        $Kernel::OM->Get('var::packagesetup::ZnunyDashboardWidgetSearchProfile')->CodeReinstall();
+    ]]></CodeReinstall>
+    <CodeUninstall Type="pre"><![CDATA[
+        $Kernel::OM->Get('var::packagesetup::ZnunyDashboardWidgetSearchProfile')->CodeUninstall();
+    ]]></CodeUninstall>
+    <CodeUpgrade Type="post"><![CDATA[
+        $Kernel::OM->Get('var::packagesetup::ZnunyDashboardWidgetSearchProfile')->CodeUpgrade();
+    ]]></CodeUpgrade>
+
+    <PackageMerge Name="Znuny4OTRS-DashboardWidgetSearchProfile" TargetVersion="6.0.9"/>
 </otrs_package>
