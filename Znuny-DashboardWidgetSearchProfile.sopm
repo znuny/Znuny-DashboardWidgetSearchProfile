@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny-DashboardWidgetSearchProfile</Name>
-    <Version>6.3.1</Version>
+    <Version>6.4.1</Version>
+    <ChangeLog Version="6.4.1" Date="2022-07-28 23:37:09 +0200">Initial release for Znuny 6.4</ChangeLog>
     <ChangeLog Version="6.3.1" Date="2022-06-28 15:21:38 +0200">Initial release for Znuny 6.3.</ChangeLog>
     <ChangeLog Version="6.0.9" Date="2021-01-14 14:12:45 +0100">Fixed bug: Use of uninitialized value in concatenation (.) - $Self-&gt;{Filter}</ChangeLog>
     <ChangeLog Version="6.0.8" Date="2019-02-12 14:45:09 +0100">Improved documentation.</ChangeLog>
@@ -16,7 +17,7 @@
 - Fixed missing calculation of sysconfig configuration.</ChangeLog>
     <ChangeLog Version="6.0.1" Date="2018-12-03 16:07:59 +0100">Initial release for OTRS 6.</ChangeLog>
     <ChangeLog Version="5.0.1" Date="2017-09-27 16:22:24 +0200">Initial release 5.0.x.</ChangeLog>
-    <Framework>6.3.x</Framework>
+    <Framework>6.4.x</Framework>
     <Vendor>Znuny GmbH</Vendor>
     <URL>http://znuny.com/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
