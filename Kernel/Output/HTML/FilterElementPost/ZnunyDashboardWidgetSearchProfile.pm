@@ -6,7 +6,7 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::Output::HTML::FilterElementPost::Znuny4OTRSDashboardWidgetSearchProfile;
+package Kernel::Output::HTML::FilterElementPost::ZnunyDashboardWidgetSearchProfile;
 
 use strict;
 use warnings;
@@ -44,7 +44,7 @@ sub Run {
 
     # get group administrators
     my @SearchProfileGroupAdminList
-        = @{ $ConfigObject->Get('Znuny4OTRSDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
+        = @{ $ConfigObject->Get('ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
 
     # get all groups
     my %Groups = $GroupObject->GroupList( Valid => 1 );
@@ -65,13 +65,13 @@ sub Run {
         if (%SearchProfileData) {
 
             # set checkbox if dashboard is configured
-            if ( $SearchProfileData{Znuny4OTRSSaveDashboard} ) {
+            if ( $SearchProfileData{ShowInDashboardWidget} ) {
                 $SelectedSaveDashboard = ' checked="checked"';
             }
 
             # set list of selected groups
-            if ( IsArrayRefWithData( $SearchProfileData{Znuny4OTRSSaveGroups} ) ) {
-                $SelectedGroupIDs = $SearchProfileData{Znuny4OTRSSaveGroups};
+            if ( IsArrayRefWithData( $SearchProfileData{ProfileGroupIDs} ) ) {
+                $SelectedGroupIDs = $SearchProfileData{ProfileGroupIDs};
             }
         }
     }
@@ -96,8 +96,8 @@ sub Run {
     # prepare group selection
     my $SaveGroupsSelection = $LayoutObject->BuildSelection(
         Data         => \%Groups,
-        Name         => 'Znuny4OTRSSaveGroups',
-        ID           => 'Znuny4OTRSSaveGroups',
+        Name         => 'ProfileGroupIDs',
+        ID           => 'ProfileGroupIDs',
         Multiple     => 1,
         Size         => 1,
         Class        => 'Modernize',
@@ -113,7 +113,7 @@ sub Run {
             <div class="Clear"></div>
             <label>$SaveDashboardLabel:</label>
             <div class="Field">
-                <input type="checkbox" name="Znuny4OTRSSaveDashboard" id="Znuny4OTRSSaveDashboard" value="1"$SelectedSaveDashboard />
+                <input type="checkbox" name="ShowInDashboardWidget" id="ShowInDashboardWidget" value="1"$SelectedSaveDashboard />
             </div>
 ZNUUNY
     my $OptionsSaveGroupsHTML = <<ZNUUNY;
