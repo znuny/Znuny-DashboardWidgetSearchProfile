@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny4OTRS-DashboardWidgetSearchProfile</Name>
-    <Version>6.0.9</Version>
+    <Version>6.0.10</Version>
     <Framework>6.0.x</Framework>
     <PackageRequired Version="6.0.35">Znuny4OTRS-Repo</PackageRequired>
     <Vendor>Znuny GmbH</Vendor>
@@ -9,6 +9,7 @@
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">This package contains the functionality to display a search profile widget in the overview.</Description>
     <Description Lang="de">Dieses Paket enthält die Funktionalität um ein Suchvorlagen Widget in der Übersicht anzuzeigen.</Description>
+    <ChangeLog Version="6.0.10" Date="2023-07-25 09:59:12 +0200">Fixed use of uninitialized variable 'GroupProfiles'.</ChangeLog>
     <ChangeLog Version="6.0.9" Date="2021-01-14 14:12:45 +0100">Fixed bug: Use of uninitialized value in concatenation (.) - $Self-&gt;{Filter}</ChangeLog>
     <ChangeLog Version="6.0.8" Date="2019-02-12 14:45:09 +0100">Improved documentation.</ChangeLog>
     <ChangeLog Version="6.0.7" Date="2019-02-12 12:51:48 +0100">Added functionality to disable the last search profile for the dashboard.</ChangeLog>
