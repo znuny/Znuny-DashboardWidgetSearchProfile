@@ -1,14 +1,14 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/System/SearchProfile.pm
+# $origin: znuny - 9acf81c7bd8ba2743748040d957fe4856d8a43b9 - Kernel/System/SearchProfile.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-## nofilter(TidyAll::Plugin::OTRS::Perl::ParamObject)
+## nofilter(TidyAll::Plugin::Znuny::Perl::ParamObject)
 
 package Kernel::System::SearchProfile;
 
@@ -93,11 +93,11 @@ sub SearchProfileAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Base Name Key UserLogin)) {
-        if ( !defined $Param{$_} ) {
+    for my $Needed (qw(Base Name Key UserLogin)) {
+        if ( !defined $Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!",
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -266,11 +266,11 @@ sub SearchProfileGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Base Name UserLogin)) {
-        if ( !defined( $Param{$_} ) ) {
+    for my $Needed (qw(Base Name UserLogin)) {
+        if ( !defined( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!",
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -537,11 +537,11 @@ sub SearchProfileDelete {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Base Name UserLogin)) {
-        if ( !$Param{$_} ) {
+    for my $Needed (qw(Base Name UserLogin)) {
+        if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!",
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -650,11 +650,11 @@ sub SearchProfileList {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Base UserLogin)) {
-        if ( !defined( $Param{$_} ) ) {
+    for my $Needed (qw(Base UserLogin)) {
+        if ( !defined( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!",
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -721,11 +721,11 @@ sub SearchProfileUpdateUserLogin {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Base UserLogin NewUserLogin)) {
-        if ( !defined( $Param{$_} ) ) {
+    for my $Needed (qw(Base UserLogin NewUserLogin)) {
+        if ( !defined( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!",
+                Message  => "Need $Needed!",
             );
             return;
         }

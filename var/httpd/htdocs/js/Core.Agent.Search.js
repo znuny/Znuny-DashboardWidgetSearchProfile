@@ -1,8 +1,8 @@
 // --
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-// Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
+// Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: znuny - 9acf81c7bd8ba2743748040d957fe4856d8a43b9 - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -372,6 +372,13 @@ Core.Agent.Search = (function (TargetNS) {
             Core.Config.Get('CGIHandle'),
             Data,
             function (HTML) {
+// ---
+// Znuny4OTRS-DashboardWidgetSearchProfile
+// ---
+                var GroupProfiles,
+                    IsAdmin,
+                    ProfileName;
+// ---
                 // if the waiting dialog was cancelled, do not show the search
                 //  dialog as well
                 if (!$('.Dialog:visible').length) {
@@ -391,9 +398,9 @@ Core.Agent.Search = (function (TargetNS) {
 // ---
 // Znuny4OTRS-DashboardWidgetSearchProfile
 // ---
-                var GroupProfiles = Core.Config.Get('SearchProfilesGrouped');
-                var IsAdmin       = Core.Config.Get('SearchProfileGroupAdmin');
-                var ProfileName   = $('#SearchProfile').val();
+                GroupProfiles = Core.Config.Get('SearchProfilesGrouped') || [];
+                IsAdmin       = Core.Config.Get('SearchProfileGroupAdmin');
+                ProfileName   = $('#SearchProfile').val();
 // ---
 
                 // hide add template block
