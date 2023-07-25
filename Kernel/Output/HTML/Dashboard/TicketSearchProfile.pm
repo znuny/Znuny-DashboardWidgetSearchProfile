@@ -1,14 +1,14 @@
 # --
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
-# Copyright (C) 2012-2021 Znuny GmbH, http://znuny.com/
+# Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: otrs - 289a2f764e52cb6c558d76a74c9dd73f49777566 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - 9acf81c7bd8ba2743748040d957fe4856d8a43b9 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
 # --
-## nofilter(TidyAll::Plugin::OTRS::Znuny4OTRS::CodeStyle::ObjectManagerDirectCall)
+## nofilter(TidyAll::Plugin::Znuny::CodeStyle::ObjectManagerDirectCall)
 
 # ---
 # Znuny4OTRS-DashboardWidgetSearchProfile
@@ -333,10 +333,8 @@ sub new {
     if ( $Self->{Config}->{IsProcessWidget} ) {
 
         # get process management configuration
-        $Self->{ProcessManagementProcessID}
-            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementProcessID');
-        $Self->{ProcessManagementActivityID}
-            = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementActivityID');
+        $Self->{ProcessManagementProcessID}  = $ConfigObject->Get('Process::DynamicFieldProcessManagementProcessID');
+        $Self->{ProcessManagementActivityID} = $ConfigObject->Get('Process::DynamicFieldProcessManagementActivityID');
 
         # get the list of processes in the system
         my $ProcessListHash = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessList(
@@ -1032,7 +1030,7 @@ sub Run {
         next COLUMNNAME if !$GetColumnFilter{$ColumnName};
         $ColumnFilterLink
             .= ';' . $LayoutObject->Ascii2Html( Text => 'ColumnFilter' . $ColumnName )
-            . '=' . $LayoutObject->Ascii2Html( Text => $GetColumnFilter{$ColumnName} );
+            . '=' . $LayoutObject->LinkEncode( $GetColumnFilter{$ColumnName} );
     }
 
     my $LinkPage =
@@ -1090,7 +1088,7 @@ sub Run {
     $LayoutObject->AddJSData(
         Key   => 'InitContainerDashboard' . $Self->{Name},
         Value => {
-            SortBy => $Self->{SortBy} || 'Age',
+            SortBy  => $Self->{SortBy} || 'Age',
             OrderBy => $TicketSearch{OrderBy},
         },
     );
@@ -1601,7 +1599,7 @@ sub Run {
                     Name => 'ContentLargeTicketGenericHeaderColumn',
                     Data => {
                         HeaderColumnName => $DynamicFieldName || '',
-                        CSS => $CSS || '',
+                        CSS              => $CSS              || '',
                     },
                 );
 
@@ -1730,7 +1728,7 @@ sub Run {
                     Name => 'ContentLargeTicketGenericHeaderColumn',
                     Data => {
                         HeaderColumnName => $DynamicFieldName || '',
-                        CSS => $CSS || '',
+                        CSS              => $CSS              || '',
                     },
                 );
 
@@ -2352,7 +2350,7 @@ sub _ColumnFilterJSON {
 
         my %Values = %{ $Param{ColumnValues} };
 
-        # set possible values
+        # Set possible values.
         for my $ValueKey ( sort { lc $Values{$a} cmp lc $Values{$b} } keys %Values ) {
             push @{$Data}, {
                 Key   => $ValueKey,
@@ -2615,7 +2613,7 @@ sub _SearchParamsGet {
         %TicketSearch,
         %DynamicFieldsParameters,
         Permission => $Self->{Config}->{Permission} || 'ro',
-        UserID => $Self->{UserID},
+        UserID     => $Self->{UserID},
     );
 
     # CustomerInformationCenter shows data per CustomerID
@@ -2673,7 +2671,7 @@ sub _SearchParamsGet {
 #         },
 #         Responsible => {
 #             ResponsibleIDs => $TicketSearch{ResponsibleIDs} // [ $Self->{UserID}, ],
-#             LockIDs => $TicketSearch{LockIDs} // undef,
+#             LockIDs        => $TicketSearch{LockIDs}        // undef,
 #         },
 #         MyQueues => {
 #             QueueIDs => \@MyQueues,
@@ -2686,7 +2684,7 @@ sub _SearchParamsGet {
 #         },
 #         All => {
 #             OwnerIDs => $TicketSearch{OwnerIDs} // undef,
-#             LockIDs  => $TicketSearch{LockIDs} // undef,
+#             LockIDs  => $TicketSearch{LockIDs}  // undef,
 #         },
 #     );
 #

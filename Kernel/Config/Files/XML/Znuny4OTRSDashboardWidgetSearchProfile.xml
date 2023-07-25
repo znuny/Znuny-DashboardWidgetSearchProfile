@@ -64,6 +64,7 @@
                 <Item Key="Templates">
                     <Hash>
                         <Item Key="AgentTicketSearch">1</Item>
+                        <Item Key="AgentFAQSearch">1</Item>
                     </Hash>
                 </Item>
             </Hash>
