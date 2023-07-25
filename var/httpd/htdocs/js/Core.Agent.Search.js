@@ -2,7 +2,7 @@
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: znuny - 4e84ea4bb19adae193fe08ab181211d0fc4b8a0a - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -373,6 +373,10 @@ Core.Agent.Search = (function (TargetNS) {
             Core.Config.Get('CGIHandle'),
             Data,
             function (HTML) {
+                var GroupProfiles,
+                    IsAdmin,
+                    ProfileName;
+
                 // if the waiting dialog was cancelled, do not show the search
                 //  dialog as well
                 if (!$('.Dialog:visible').length) {
@@ -392,9 +396,9 @@ Core.Agent.Search = (function (TargetNS) {
 // ---
 // Znuny-DashboardWidgetSearchProfile
 // ---
-                var GroupProfiles = Core.Config.Get('SearchProfilesGrouped');
-                var IsAdmin       = Core.Config.Get('SearchProfileGroupAdmin');
-                var ProfileName   = $('#SearchProfile').val();
+                GroupProfiles = Core.Config.Get('SearchProfilesGrouped') || [];
+                IsAdmin       = Core.Config.Get('SearchProfileGroupAdmin');
+                ProfileName   = $('#SearchProfile').val();
 // ---
 
                 // hide add template block
