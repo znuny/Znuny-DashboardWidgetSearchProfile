@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 # Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - a74d4be2744824f52a55a3cbf6425a697a85e3a8 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -347,6 +347,21 @@ sub new {
         @{ $Self->{ProcessList} } = sort keys %{$ProcessListHash};
     }
 
+    # Mentions
+    $Self->{AdditionalMentionTicketSearchParams} = {};
+    if ( $Self->{Config}->{IncludesMentions} ) {
+        my $MentionObject = $Kernel::OM->Get('Kernel::System::Mention');
+
+        $Self->{MentionTicketData} = $MentionObject->GetDashboardWidgetTicketData(
+            UserID => $Self->{UserID},
+        );
+
+        if ( IsHashRefWithData( $Self->{MentionTicketData} ) ) {
+            $Self->{AdditionalMentionTicketSearchParams}->{TicketID} = $Self->{MentionTicketData}->{TicketIDs};
+            $Self->{AdditionalMentionTicketSearchParams}->{UserID}   = 1;
+        }
+    }
+
     return $Self;
 }
 
@@ -507,11 +522,21 @@ sub FilterContent {
         }
 
         if ( !$Self->{Config}->{IsProcessWidget} || IsArrayRefWithData( $Self->{ProcessList} ) ) {
-            @OriginalViewableTickets = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
-                %TicketSearch,
-                %{ $TicketSearchSummary{ $Self->{Filter} } },
-                Result => 'ARRAY',
-            );
+
+            # Ticket search will only be executed if widget does not include mentions
+            # or if it does, the user must have mentions.
+            if (
+                !$Self->{Config}->{IncludesMentions}
+                || $Self->{MentionTicketData}
+                )
+            {
+                @OriginalViewableTickets = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+                    %TicketSearch,
+                    %{ $TicketSearchSummary{ $Self->{Filter} } },
+                    %{ $Self->{AdditionalMentionTicketSearchParams} },    # is empty if no mentions present
+                    Result => 'ARRAY',
+                );
+            }
         }
     }
 
@@ -644,7 +669,6 @@ sub Run {
         $CacheKey .= '-' . $Self->{AdditionalFilter};
     }
 
-    # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 # ---
 # Znuny-DashboardWidgetSearchProfile
@@ -660,10 +684,14 @@ sub Run {
     }
 # ---
 
-    # check cache
     my $TicketIDs = $CacheObject->Get(
         Type => 'Dashboard',
         Key  => $CacheKey . '-' . $Self->{Filter} . '-List',
+    );
+
+    my $CustomColumns = $CacheObject->Get(
+        Type => 'Dashboard',
+        Key  => $CacheKey . '-' . $Self->{Filter} . '-CustomColumns',
     );
 
     # find and show ticket list
@@ -747,17 +775,33 @@ sub Run {
 
             # Execute search.
             else {
-                @TicketIDsArray = $TicketObject->TicketSearch(
-                    %TicketSearch,
-                    %{ $TicketSearchSummary{ $Self->{Filter} } },
-                    %ColumnFilter,
-                    Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
-# ---
-# Znuny-DashboardWidgetSearchProfile
-# ---
-                    Result => 'ARRAY',
-# ---
-                );
+
+                # Mentions
+                if (
+                    $Self->{Config}->{IncludesMentions}
+                    && $Self->{MentionTicketData}
+                    && $Self->{MentionTicketData}->{CustomColumns}
+                    )
+                {
+                    $CustomColumns = $Self->{MentionTicketData}->{CustomColumns};
+                }
+
+                # Ticket search will only be executed if widget does not include mentions
+                # or if it does, the user must have mentions.
+                if (
+                    !$Self->{Config}->{IncludesMentions}
+                    || $Self->{MentionTicketData}
+                    )
+                {
+                    @TicketIDsArray = $TicketObject->TicketSearch(
+                        Result => 'ARRAY',
+                        %TicketSearch,
+                        %{ $TicketSearchSummary{ $Self->{Filter} } },
+                        %ColumnFilter,
+                        Limit => $Self->{PageShown} + $Self->{StartHit} - 1,
+                        %{ $Self->{AdditionalMentionTicketSearchParams} },    # is empty if no mentions present
+                    );
+                }
             }
         }
         $TicketIDs = \@TicketIDsArray;
@@ -848,12 +892,23 @@ sub Run {
 
                 # Execute search.
                 else {
-                    $Summary->{$Type} = $TicketObject->TicketSearch(
-                        Result => 'COUNT',
-                        %TicketSearch,
-                        %{ $TicketSearchSummary{$Type} },
-                        %ColumnFilter,
-                    ) || 0;
+                    $Summary->{$Type} = 0;
+
+                    # Ticket search will only be executed if widget does not include mentions
+                    # or if it does, the user must have mentions.
+                    if (
+                        !$Self->{Config}->{IncludesMentions}
+                        || $Self->{MentionTicketData}
+                        )
+                    {
+                        $Summary->{$Type} = $TicketObject->TicketSearch(
+                            Result => 'COUNT',
+                            %TicketSearch,
+                            %{ $TicketSearchSummary{$Type} },
+                            %ColumnFilter,
+                            %{ $Self->{AdditionalMentionTicketSearchParams} },    # is empty if no mentions present
+                        ) || 0;
+                    }
                 }
             }
         }
@@ -873,6 +928,15 @@ sub Run {
             Value => $TicketIDs,
             TTL   => $Self->{Config}->{CacheTTLLocal} * 60,
         );
+
+        if ($CustomColumns) {
+            $CacheObject->Set(
+                Type  => 'Dashboard',
+                Key   => $CacheKey . '-' . $Self->{Filter} . '-CustomColumns',
+                Value => $CustomColumns,
+                TTL   => $Self->{Config}->{CacheTTLLocal} * 60,
+            );
+        }
     }
 
     # Set the css class for the selected filter and additional filter.
@@ -981,6 +1045,19 @@ sub Run {
 #     if ( $TicketSearchSummary{Locked} ) {
 #         $LayoutObject->Block(
 #             Name => 'ContentLargeTicketGenericFilterLocked',
+#             Data => {
+#                 %Param,
+#                 %{ $Self->{Config} },
+#                 Name => $Self->{Name},
+#                 %{$Summary},
+#             },
+#         );
+#     }
+#
+#     # show only owned tickets if we have the filter
+#     if ( $TicketSearchSummary{Owned} ) {
+#         $LayoutObject->Block(
+#             Name => 'ContentLargeTicketGenericFilterOwned',
 #             Data => {
 #                 %Param,
 #                 %{ $Self->{Config} },
@@ -1759,6 +1836,8 @@ sub Run {
             DynamicFields => 0,
             Silent        => 1
         );
+
+        %Ticket = ( %Ticket, %{ $CustomColumns->{$TicketID} } ) if $CustomColumns->{$TicketID};
 
         next TICKETID if !%Ticket;
 
@@ -2664,6 +2743,10 @@ sub _SearchParamsGet {
 #         Locked => {
 #             OwnerIDs => $TicketSearch{OwnerIDs} // [ $Self->{UserID}, ],
 #             LockIDs  => [ $LockName2ID{lock}, $LockName2ID{tmp_lock} ],
+#         },
+#         Owned => {
+#             OwnerIDs => [ $Self->{UserID}, ],
+#             LockIDs  => $TicketSearch{LockIDs} // undef,
 #         },
 #         Watcher => {
 #             WatchUserIDs => [ $Self->{UserID}, ],

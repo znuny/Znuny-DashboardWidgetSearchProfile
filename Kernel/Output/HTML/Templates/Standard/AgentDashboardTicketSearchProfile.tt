@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 # Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: znuny - 460ef44565300c6b979b0743833e3800fdbebf81 - Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
+# $origin: znuny - a74d4be2744824f52a55a3cbf6425a697a85e3a8 - Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketGeneric.tt
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -26,6 +26,9 @@
 # [% RenderBlockStart("ContentLargeTicketGenericFilterLocked") %]
 #         <li class="[% Data.item("Locked::Selected") | html %]"><a href="#" id="Dashboard[% Data.Name | html %]Locked" data-filter="Locked">[% Translate("My locked tickets") | html %] ([% Data.Locked | html %])</a></li>
 # [% RenderBlockEnd("ContentLargeTicketGenericFilterLocked") %]
+# [% RenderBlockStart("ContentLargeTicketGenericFilterOwned") %]
+#         <li class="[% Data.item("Owned::Selected") | html %]"><a href="#" id="Dashboard[% Data.Name | html %]Owned" data-filter="Owned">[% Translate("My Owned Tickets") | html %] ([% Data.Owned | html %])</a></li>
+# [% RenderBlockEnd("ContentLargeTicketGenericFilterOwned") %]
 # [% RenderBlockStart("ContentLargeTicketGenericFilterWatcher") %]
 #         <li class="[% Data.item("Watcher::Selected") | html %]"><a href="#" id="Dashboard[% Data.Name | html %]Watcher" data-filter="Watcher">[% Translate("My watched tickets") | html %] ([% Data.Watcher | html %])</a></li>
 # [% RenderBlockEnd("ContentLargeTicketGenericFilterWatcher") %]
