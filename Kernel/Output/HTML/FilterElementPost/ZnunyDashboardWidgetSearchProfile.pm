@@ -10,6 +10,7 @@ package Kernel::Output::HTML::FilterElementPost::ZnunyDashboardWidgetSearchProfi
 
 use strict;
 use warnings;
+use utf8;
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -109,21 +110,6 @@ sub Run {
     my $SaveDashboardLabel = $LayoutObject->{LanguageObject}->Translate('Save search for dashboard');
     my $SaveGroupsLabel    = $LayoutObject->{LanguageObject}->Translate('Save search for group');
 
-    my $OptionsDashboardHTML = <<ZNUUNY;
-            <div class="Clear"></div>
-            <label>$SaveDashboardLabel:</label>
-            <div class="Field">
-                <input type="checkbox" name="ShowInDashboardWidget" id="ShowInDashboardWidget" value="1"$SelectedSaveDashboard />
-            </div>
-ZNUUNY
-    my $OptionsSaveGroupsHTML = <<ZNUUNY;
-            <div class="Clear"></div>
-            <label>$SaveGroupsLabel:</label>
-            <div class="Field">
-                $SaveGroupsSelection
-            </div>
-ZNUUNY
-
     # get grouped search profiles
     my %SearchProfileGroupList = $SearchProfileObject->SearchProfileGroupList(
         Base      => 'TicketSearch',
@@ -135,13 +121,27 @@ ZNUUNY
 
     # add js to have grouped search profiles available
     my $SearchProfilesGroupedHTML = <<JSBLOCK;
-<script type="text/javascript">
-Core.Config.Set('SearchProfilesGrouped', $SearchProfilesGroupedJSON);
-Core.Config.Set('SearchProfileGroupAdmin', $IsAdmin);
+<script type="text/javascript" style="display: none !important">
+    Core.Config.Set('SearchProfilesGrouped', $SearchProfilesGroupedJSON);
+    Core.Config.Set('SearchProfileGroupAdmin', $IsAdmin);
 </script>
 JSBLOCK
 
-    my $AddHTML = $SearchProfilesGroupedHTML . $OptionsDashboardHTML;
+    my $OptionsDashboardHTML = <<ZNUUNY;
+            <label>$SaveDashboardLabel:</label>
+            <div class="Field align-item-left">
+                <input type="checkbox" name="ShowInDashboardWidget" id="ShowInDashboardWidget" value="1"$SelectedSaveDashboard />
+                $SearchProfilesGroupedHTML
+            </div>
+ZNUUNY
+    my $OptionsSaveGroupsHTML = <<ZNUUNY;
+            <label>$SaveGroupsLabel:</label>
+            <div class="Field align-item-left">
+                $SaveGroupsSelection
+            </div>
+ZNUUNY
+
+    my $AddHTML = $OptionsDashboardHTML;
     if ($IsAdmin) {
         $AddHTML .= $OptionsSaveGroupsHTML;
     }
