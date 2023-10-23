@@ -109,6 +109,7 @@ sub Run {
 
     my $SaveDashboardLabel = $LayoutObject->{LanguageObject}->Translate('Save search for dashboard');
     my $SaveGroupsLabel    = $LayoutObject->{LanguageObject}->Translate('Save search for group');
+    my $SaveTemplateLabel  = $LayoutObject->{LanguageObject}->Translate('Save changes in template');
 
     # get grouped search profiles
     my %SearchProfileGroupList = $SearchProfileObject->SearchProfileGroupList(
@@ -128,17 +129,19 @@ sub Run {
 JSBLOCK
 
     my $OptionsDashboardHTML = <<ZNUUNY;
-            <label>$SaveDashboardLabel:</label>
-            <div class="Field align-item-left">
-                <input type="checkbox" name="ShowInDashboardWidget" id="ShowInDashboardWidget" value="1"$SelectedSaveDashboard />
-                $SearchProfilesGroupedHTML
-            </div>
+                <div class="search-tmp-opt-wrapper">
+                    <div class="align-item-left">
+                        <input type="checkbox" name="ShowInDashboardWidget" id="ShowInDashboardWidget" value="1"$SelectedSaveDashboard />
+                        $SearchProfilesGroupedHTML
+                    </div>
+                    <label>$SaveDashboardLabel</label>
+                </div>
 ZNUUNY
     my $OptionsSaveGroupsHTML = <<ZNUUNY;
-            <label>$SaveGroupsLabel:</label>
-            <div class="Field align-item-left">
-                $SaveGroupsSelection
-            </div>
+                    <label>$SaveGroupsLabel:</label>
+                    <div class="align-item-left">
+                        $SaveGroupsSelection
+                    </div>
 ZNUUNY
 
     my $AddHTML = $OptionsDashboardHTML;
@@ -147,7 +150,7 @@ ZNUUNY
     }
 
     # manipulate HTML content
-    ${ $Param{Data} } =~ s{ <input [^>]+ SaveProfile [^>]+ > \s* <\/div> }{ $& $AddHTML }xmsi;
+    ${ $Param{Data} } =~ s{<label for="SaveProfile">$SaveTemplateLabel<\/label>\s+<\/div>}{ $& $AddHTML }sm;
 
     return 1;
 }

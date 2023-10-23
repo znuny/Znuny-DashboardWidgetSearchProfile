@@ -34,7 +34,6 @@
         <File Permission="660" Location="Kernel/Output/HTML/Dashboard/TicketSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/FilterElementPost/ZnunyDashboardWidgetSearchProfile.pm"/>
         <File Permission="660" Location="Kernel/Output/HTML/Templates/Standard/AgentDashboardTicketSearchProfile.tt"/>
-        <File Permission="660" Location="scripts/test/ZnunyDashboardWidgetSearchProfile/Selenium/Output/HTML/FilterElementPost/ZnunyDashboardWidgetSearchProfile.t"/>
         <File Permission="660" Location="scripts/test/ZnunyDashboardWidgetSearchProfile/System/SearchProfile.t"/>
         <File Permission="660" Location="var/httpd/htdocs/js/Core.Agent.Search.js"/>
         <File Permission="660" Location="var/packagesetup/ZnunyDashboardWidgetSearchProfile.pm"/>
