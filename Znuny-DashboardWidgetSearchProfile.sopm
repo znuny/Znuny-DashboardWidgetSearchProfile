@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny-DashboardWidgetSearchProfile</Name>
-    <Version>7.0.1</Version>
+    <Version>7.0.2</Version>
     <Framework>7.0.x</Framework>
     <Vendor>Znuny GmbH</Vendor>
     <URL>http://znuny.com/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">Displays a search profile widget in the overview.</Description>
     <Description Lang="de">Zeigt Suchvorlagen-Widget in der Übersicht an.</Description>
+    <ChangeLog Version="7.0.2" Date="2023-10-23 11:33:18 +0200">Fixed Znuny 7 - GUI Redesign bug.</ChangeLog>
     <ChangeLog Version="7.0.1" Date="2023-09-12 14:10:05 +0200">Initial release for Znuny 7</ChangeLog>
     <ChangeLog Version="6.5.2" Date="2023-07-25 15:11:51 +0200">Fixed use of uninitialized variable 'GroupProfiles'.</ChangeLog>
     <ChangeLog Version="6.5.1" Date="2023-02-20 14:02:31 +0100">Initial release for Znuny 6.5.</ChangeLog>
