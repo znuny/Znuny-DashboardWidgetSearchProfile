@@ -40,7 +40,12 @@ sub Run {
     my $LayoutObject        = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $LogObject           = $Kernel::OM->Get('Kernel::System::Log');
     my $ParamObject         = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $UserObject          = $Kernel::OM->Get('Kernel::System::User');
     my $SearchProfileObject = $Kernel::OM->Get('Kernel::System::SearchProfile');
+
+    my $UserLogin = $UserObject->UserLookup(
+        UserID => $LayoutObject->{UserID},
+    );
 
     # get group administrators
     my @SearchProfileGroupAdminList
@@ -59,7 +64,7 @@ sub Run {
         my %SearchProfileData = $SearchProfileObject->SearchProfileGet(
             Base      => 'TicketSearch',
             Name      => $Profile,
-            UserLogin => $LayoutObject->{UserLogin},
+            UserLogin => $UserLogin,
         );
 
         if (%SearchProfileData) {
@@ -127,7 +132,7 @@ ZNUUNY
     # get grouped search profiles
     my %SearchProfileGroupList = $SearchProfileObject->SearchProfileGroupList(
         Base      => 'TicketSearch',
-        UserLogin => $LayoutObject->{UserLogin},
+        UserLogin => $UserLogin,
     );
     my $SearchProfilesGroupedJSON = $LayoutObject->JSONEncode(
         Data => \%SearchProfileGroupList,
