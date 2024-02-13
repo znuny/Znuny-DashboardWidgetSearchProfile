@@ -65,6 +65,7 @@ run the code install part
 sub CodeInstall {
     my ( $Self, %Param ) = @_;
 
+    return if !$Self->_EnableDashboardSearchProfileDynamicFieldSelection(%Param);
     return if !$Self->_MigrateSearchProfileKeys(%Param);
     return if !$Self->_MigrateSysConfigSettings(%Param);
 
@@ -82,6 +83,7 @@ run the code reinstall part
 sub CodeReinstall {
     my ( $Self, %Param ) = @_;
 
+    return if !$Self->_EnableDashboardSearchProfileDynamicFieldSelection(%Param);
     return if !$Self->CodeUninstall();
     return if !$Self->CodeInstall();
 
@@ -99,6 +101,7 @@ run the code upgrade part
 sub CodeUpgrade {
     my ( $Self, %Param ) = @_;
 
+    return if !$Self->_EnableDashboardSearchProfileDynamicFieldSelection(%Param);
     return if !$Self->CodeInstall();
 
     return 1;
@@ -114,6 +117,135 @@ run the code uninstall part
 
 sub CodeUninstall {
     my ( $Self, %Param ) = @_;
+
+    return if !$Self->_DisableDashboardSearchProfileDynamicFieldSelection(%Param);
+
+    return 1;
+}
+
+=head2 _EnableDashboardSearchProfileDynamicFieldSelection()
+
+Enables selection of dynamic fields via AdminDynamicFieldScreenConfiguration for dashboard widget SearchProfile.
+
+=cut
+
+sub _EnableDashboardSearchProfileDynamicFieldSelection {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject    = $Kernel::OM->Get('Kernel::Config');
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+
+    my $DefaultColumnsScreens = $ConfigObject->Get('DefaultColumnsScreens') // {};
+
+    if (
+        exists $DefaultColumnsScreens->{Framework}
+        && !exists $DefaultColumnsScreens->{Framework}->{'DashboardBackend###0001-SearchProfile'}
+        )
+    {
+        $DefaultColumnsScreens->{Framework}->{'DashboardBackend###0001-SearchProfile'}
+            = 'DashboardWidget SearchProfile';
+
+        my $SysConfigOptionSet = $SysConfigObject->SettingsSet(
+            UserID   => 1,
+            Comments => 'CodeInstall of Znuny-DashboardWidgetSearchProfile',
+            Settings => [
+                {
+                    Name           => 'DefaultColumnsScreens###Framework',
+                    EffectiveValue => $DefaultColumnsScreens->{Framework},
+                },
+            ],
+        );
+
+        return if !$SysConfigOptionSet;
+    }
+
+    my $ConfigKeysOfScreensByObjectType
+        = $ConfigObject->Get('DynamicFields::ScreenConfiguration::ConfigKeysOfScreensByObjectType') // {};
+
+    if (
+        exists $ConfigKeysOfScreensByObjectType->{Framework}
+        && !exists $ConfigKeysOfScreensByObjectType->{Framework}->{Ticket}->{'DashboardBackend###0001-SearchProfile'}
+        )
+    {
+        $ConfigKeysOfScreensByObjectType->{Framework}->{Ticket}->{'DashboardBackend###0001-SearchProfile'}
+            = 'DashboardWidget SearchProfile';
+
+        my $SysConfigOptionSet = $SysConfigObject->SettingsSet(
+            UserID   => 1,
+            Comments => 'CodeInstall of Znuny-DashboardWidgetSearchProfile',
+            Settings => [
+                {
+                    Name           => 'DynamicFields::ScreenConfiguration::ConfigKeysOfScreensByObjectType###Framework',
+                    EffectiveValue => $ConfigKeysOfScreensByObjectType->{Framework},
+                },
+            ],
+        );
+
+        return if !$SysConfigOptionSet;
+    }
+
+    return 1;
+}
+
+=head2 _DisableDashboardSearchProfileDynamicFieldSelection()
+
+Disables selection of dynamic fields via AdminDynamicFieldScreenConfiguration for dashboard widget SearchProfile.
+
+=cut
+
+sub _DisableDashboardSearchProfileDynamicFieldSelection {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject    = $Kernel::OM->Get('Kernel::Config');
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+
+    my $DefaultColumnsScreens = $ConfigObject->Get('DefaultColumnsScreens') // {};
+
+    if (
+        exists $DefaultColumnsScreens->{Framework}
+        && exists $DefaultColumnsScreens->{Framework}->{'DashboardBackend###0001-SearchProfile'}
+        )
+    {
+
+        delete $DefaultColumnsScreens->{Framework}->{'DashboardBackend###0001-SearchProfile'};
+
+        my $SysConfigOptionSet = $SysConfigObject->SettingsSet(
+            UserID   => 1,
+            Comments => 'CodeInstall of Znuny-DashboardWidgetSearchProfile',
+            Settings => [
+                {
+                    Name           => 'DefaultColumnsScreens###Framework',
+                    EffectiveValue => $DefaultColumnsScreens->{Framework},
+                },
+            ],
+        );
+
+        return if !$SysConfigOptionSet;
+    }
+
+    my $ConfigKeysOfScreensByObjectType
+        = $ConfigObject->Get('DynamicFields::ScreenConfiguration::ConfigKeysOfScreensByObjectType') // {};
+
+    if (
+        exists $ConfigKeysOfScreensByObjectType->{Framework}
+        && exists $ConfigKeysOfScreensByObjectType->{Framework}->{Ticket}->{'DashboardBackend###0001-SearchProfile'}
+        )
+    {
+        delete $ConfigKeysOfScreensByObjectType->{Framework}->{Ticket}->{'DashboardBackend###0001-SearchProfile'};
+
+        my $SysConfigOptionSet = $SysConfigObject->SettingsSet(
+            UserID   => 1,
+            Comments => 'CodeInstall of Znuny-DashboardWidgetSearchProfile',
+            Settings => [
+                {
+                    Name           => 'DynamicFields::ScreenConfiguration::ConfigKeysOfScreensByObjectType###Framework',
+                    EffectiveValue => $ConfigKeysOfScreensByObjectType->{Framework},
+                },
+            ],
+        );
+
+        return if !$SysConfigOptionSet;
+    }
 
     return 1;
 }
