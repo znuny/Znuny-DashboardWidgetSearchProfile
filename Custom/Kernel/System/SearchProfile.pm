@@ -745,6 +745,16 @@ sub SearchProfileUpdateUserLogin {
             UserLogin => $Param{UserLogin},
         );
 
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
+        # delete the old profile
+        $Self->SearchProfileDelete(
+            Base      => $Param{Base},
+            Name      => $SearchProfile,
+            UserLogin => $Param{UserLogin},
+        );
+# ---
         # add profile for new login (needs to be done per attribute)
         for my $Attribute ( sort keys %Search ) {
             $Self->SearchProfileAdd(
@@ -756,12 +766,16 @@ sub SearchProfileUpdateUserLogin {
             );
         }
 
-        # delete the old profile
-        $Self->SearchProfileDelete(
-            Base      => $Param{Base},
-            Name      => $SearchProfile,
-            UserLogin => $Param{UserLogin},
-        );
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
+#         # delete the old profile
+#         $Self->SearchProfileDelete(
+#             Base      => $Param{Base},
+#             Name      => $SearchProfile,
+#             UserLogin => $Param{UserLogin},
+#         );
+# ---
     }
 
     return 1;
