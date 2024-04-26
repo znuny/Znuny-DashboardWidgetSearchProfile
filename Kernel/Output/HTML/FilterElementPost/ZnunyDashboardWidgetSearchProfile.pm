@@ -52,9 +52,6 @@ sub Run {
     my @SearchProfileGroupAdminList
         = @{ $ConfigObject->Get('ZnunyDashboardWidgetSearchProfile::SearchProfile::Groups') || [] };
 
-    # get all groups
-    my %Groups = $GroupObject->GroupList( Valid => 1 );
-
     # get checked status of the save dashboard checkbox
     my $SelectedGroupIDs      = [];
     my $SelectedSaveDashboard = '';
@@ -83,25 +80,34 @@ sub Run {
     }
 
     # get user groups
-    my %PermissionUserGetReverse = reverse $GroupObject->PermissionUserGet(
+    my %GroupsOfUserByGroupID = $GroupObject->PermissionUserGet(
         UserID => $LayoutObject->{UserID},
         Type   => 'rw',
     );
 
+    my %GroupsOfUserByGroup = reverse %GroupsOfUserByGroupID;
+
     # check if the user is group admin
-    my $IsAdmin = 0;
+    my $IsGroupAdmin = 0;
     GROUP:
     for my $Group (@SearchProfileGroupAdminList) {
-        next GROUP if !$PermissionUserGetReverse{$Group};
+        next GROUP if !$GroupsOfUserByGroup{$Group};
 
-        $IsAdmin = 1;
+        $IsGroupAdmin = 1;
 
         last GROUP;
     }
 
+    my %Groups = $GroupObject->GroupList( Valid => 1 );
+
+    my $IsAdmin = grep { $_ eq 'admin' } keys %GroupsOfUserByGroup;
+
     # prepare group selection
     my $SaveGroupsSelection = $LayoutObject->BuildSelection(
-        Data         => \%Groups,
+
+        # Only a real admin can select all groups instead of only his assigned ones.
+        Data => $IsAdmin ? \%Groups : \%GroupsOfUserByGroupID,
+
         Name         => 'ProfileGroupIDs',
         ID           => 'ProfileGroupIDs',
         Multiple     => 1,
@@ -129,7 +135,7 @@ sub Run {
     my $SearchProfilesGroupedHTML = <<JSBLOCK;
 <script type="text/javascript" style="display: none !important">
     Core.Config.Set('SearchProfilesGrouped', $SearchProfilesGroupedJSON);
-    Core.Config.Set('SearchProfileGroupAdmin', $IsAdmin);
+    Core.Config.Set('SearchProfileGroupAdmin', $IsGroupAdmin);
 </script>
 JSBLOCK
 
@@ -150,7 +156,7 @@ ZNUUNY
 ZNUUNY
 
     my $AddHTML = $OptionsDashboardHTML;
-    if ($IsAdmin) {
+    if ($IsGroupAdmin) {
         $AddHTML .= $OptionsSaveGroupsHTML;
     }
 
