@@ -4,6 +4,6 @@ Dieses Paket erweitert Znuny um ein Dashboard-Widget, welches die Suchergebnisse
 
 ![Suchvorlagen Widget](doc/de/images/widget_de.png)
 
-Zusätzlich ist es möglich, Suchprofile für einzelne Gruppen bereitzustellen.
+Zusätzlich ist es möglich, Suchprofile für einzelne Gruppen bereitzustellen. Dabei stehen nur die Gruppen zur Auswahl, auf die der aktuelle Benutzer Zugriff hat.
 
 ![Suchvorlagen gruppenbasiert](doc/de/images/search_profile_group_de.png)

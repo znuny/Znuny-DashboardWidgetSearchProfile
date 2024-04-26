@@ -4,6 +4,6 @@ This package adds a dashboard widget to Znuny that displays the search results o
 
 ![Search widget](doc/en/images/widget_en.png)
 
-In addition, it is possible to provide search profiles for individual groups.
+In addition, it is possible to provide search profiles for individual groups. Only groups to which the current user has access are available for selection.
 
 ![Group-based search templates](doc/en/images/search_profile_group_en.png)
