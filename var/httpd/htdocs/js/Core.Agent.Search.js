@@ -2,7 +2,7 @@
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: Znuny - edbba0f05515439a66e8fa7d48e03af31a667feb - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: Znuny - 63d3004225d3898d2224e2a601a3063207a75c91 - var/httpd/htdocs/js/Core.Agent.Search.js
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -64,9 +64,11 @@ Core.Agent.Search = (function (TargetNS) {
      */
     TargetNS.SearchAttributeAdd = function (Attribute) {
         var $Label = $('#SearchAttributesHidden label#Label' + Attribute),
+            InputFieldUUID,
             $Clone;
 
         if ($Label.length) {
+            InputFieldUUID = $Label.closest('div.field-wrapper').find(':input').attr('data-input-field-uuid');
 
             if ($Label.parents('.field-wrapper').length){
                 $Clone = $Label.parents('.field-wrapper').clone();
@@ -103,6 +105,13 @@ Core.Agent.Search = (function (TargetNS) {
 
             // Initially display dynamic fields with TreeMode = 1 correctly
             Core.UI.TreeSelection.InitDynamicFieldTreeViewRestore();
+
+            if (InputFieldUUID) {
+
+                // Note: Subscriber takes care of determining if this is
+                // really a dynamic field.
+                Core.App.Publish('Event.DynamicField.InitByInputFieldUUID', [InputFieldUUID]);
+            }
         }
 
         return false;
@@ -691,7 +700,6 @@ Core.Agent.Search = (function (TargetNS) {
                     TargetNS.AddSearchAttributes();
                     TargetNS.AdditionalAttributeSelectionRebuild();
                 }, 0);
-
             }, 'html'
         );
     };

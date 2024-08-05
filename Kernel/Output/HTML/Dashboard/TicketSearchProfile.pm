@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 # Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: znuny - a74d4be2744824f52a55a3cbf6425a697a85e3a8 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - 53a051ff9281fd5e4aa7f6f3478735492101c361 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -1328,23 +1328,6 @@ sub Run {
         if ( $HeaderColumn !~ m{\A DynamicField_}xms ) {
 
             $CSS = '';
-            my $Title = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
-
-            # Set title description.
-            if ( $Self->{SortBy} && $Self->{SortBy} eq $HeaderColumn ) {
-                my $TitleDesc = '';
-                if ( $TicketSearch{OrderBy} eq 'Down' ) {
-                    $CSS .= ' SortDescendingLarge';
-                    $TitleDesc = Translatable('sorted descending');
-                }
-                else {
-                    $CSS .= ' SortAscendingLarge';
-                    $TitleDesc = Translatable('sorted ascending');
-                }
-
-                $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
-                $Title .= ', ' . $TitleDesc;
-            }
 
             # translate the column name to write it in the current language
             my $TranslatedWord;
@@ -1377,6 +1360,25 @@ sub Run {
             }
             else {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
+            }
+
+            # Use the translated word also as title.
+            my $Title = $TranslatedWord;
+
+            # Set title description.
+            if ( $Self->{SortBy} && $Self->{SortBy} eq $HeaderColumn ) {
+                my $TitleDesc = '';
+                if ( $TicketSearch{OrderBy} eq 'Down' ) {
+                    $CSS .= ' SortDescendingLarge';
+                    $TitleDesc = Translatable('sorted descending');
+                }
+                else {
+                    $CSS .= ' SortAscendingLarge';
+                    $TitleDesc = Translatable('sorted ascending');
+                }
+
+                $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
+                $Title .= ', ' . $TitleDesc;
             }
 
             # add surrounding container
@@ -2054,7 +2056,7 @@ sub Run {
                     $BlockType = 'Translatable';
                     $DataValue = $Ticket{$Column};
                 }
-                elsif ( $Column eq 'Created' || $Column eq 'Changed' ) {
+                elsif ( $Column eq 'Created' || $Column eq 'Changed' || $Column eq 'LastMention' ) {
                     $BlockType = 'Time';
                     $DataValue = $Ticket{$Column};
                 }
@@ -2166,6 +2168,7 @@ sub Run {
                         Name => 'ContentLargeTicketGenericDynamicFieldLink',
                         Data => {
                             Value                       => $ValueStrg->{Value},
+                            ValueKey                    => $Value,
                             Title                       => $ValueStrg->{Title},
                             Link                        => $ValueStrg->{Link},
                             $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
@@ -2334,6 +2337,7 @@ sub _InitialColumnFilter {
         Class       => $Class . ' Modernize',
         Translation => $TranslationOption,
         SelectedID  => '',
+        TreeView    => 1,
     );
 
     return $ColumnFilterHTML;
@@ -2443,7 +2447,7 @@ sub _ColumnFilterJSON {
     my $Data = [
         {
             Key   => 'DeleteFilter',
-            Value => uc $Label,
+            Value => '-',
         },
         {
             Key      => '-',
@@ -2802,33 +2806,33 @@ sub _SearchParamsGet {
 # ---
 # Znuny-DashboardWidgetSearchProfile
 # ---
-#         Locked => {
-#             Label => "My locked tickets",
-#         },
-#         Watcher => {
-#             Label => "My watched tickets",
-#         },
-#         Responsible => {
-#             Label => "My responsibilities",
-#         },
-#         MyQueues => {
-#             Label => "Tickets in My Queues",
-#         },
-#         MyServices => {
-#             Label => "Tickets in My Services",
-#         },
-#         All => {
-#             Label => "All tickets",
-#         },
-#         AssignedToCustomerUser => {
-#             Label => "Assigned to customer user",
-#         },
-#         AccessibleForCustomerUser => {
-#             Label => "Accessible for customer user",
-#         },
-#         Owned => {
-#             Label => "My owned tickets",
-#         },
+#        Locked => {
+#            Label => "My locked tickets",
+#        },
+#        Watcher => {
+#            Label => "My watched tickets",
+#        },
+#        Responsible => {
+#            Label => "My responsibilities",
+#        },
+#        MyQueues => {
+#            Label => "Tickets in My Queues",
+#        },
+#        MyServices => {
+#            Label => "Tickets in My Services",
+#        },
+#        All => {
+#            Label => "All tickets",
+#        },
+#        AssignedToCustomerUser => {
+#            Label => "Assigned to customer user",
+#        },
+#        AccessibleForCustomerUser => {
+#            Label => "Accessible for customer user",
+#        },
+#        Owned => {
+#            Label => "My owned tickets",
+#        },
 # ---
     );
 # ---
