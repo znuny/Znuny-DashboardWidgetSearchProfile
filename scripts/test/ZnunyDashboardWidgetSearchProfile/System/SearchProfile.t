@@ -225,7 +225,7 @@ my $SearchProfileDelete = $SearchProfileObject->SearchProfileDelete(
     Base      => 'TicketSearch',
     Name      => 'blub',
     UserLogin => $UserData2{UserLogin},
-    ,
+
 );
 
 $Self->True(
