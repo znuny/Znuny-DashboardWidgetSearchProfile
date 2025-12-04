@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_package version="1.0">
     <Name>Znuny-DashboardWidgetSearchProfile</Name>
-    <Version>7.2.1</Version>
+    <Version>7.3.1</Version>
     <Framework>7.3.x</Framework>
     <Vendor>Znuny GmbH</Vendor>
     <URL>http://znuny.com/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">Displays a search profile widget in the overview.</Description>
     <Description Lang="de">Zeigt Suchvorlagen-Widget in der Übersicht an.</Description>
+    <ChangeLog Version="7.3.1" Date="2025-12-05 00:09:39 +0100">Initial release for Znuny 7.3.</ChangeLog>
     <ChangeLog Version="7.2.1" Date="2025-09-04 12:13:20 +0200">Initial release for Znuny 7.2.</ChangeLog>
     <ChangeLog Version="7.1.1" Date="2024-10-14 15:49:48 +0200">Initial release for Znuny 7.1.</ChangeLog>
     <ChangeLog Version="7.0.5" Date="2024-04-26 16:32:16 +0200">Non-system-admins that are configured "group admins" now can only select groups for search profiles among their assigned groups.</ChangeLog>
