@@ -1,6 +1,6 @@
 ![Znuny logo](https://www.znuny.com/assets/images/logo_small.png)
 
-![Build status](https://badge.proxy.znuny.com/Znuny4OTRS-DashboardWidgetSearchProfile/rel-7_2)
+![Build status](https://badge.proxy.znuny.com/Znuny4OTRS-DashboardWidgetSearchProfile/rel-7_3)
 
 Znuny-DashboardWidgetSearchProfile
 ==================================
@@ -12,7 +12,7 @@ Znuny-DashboardWidgetSearchProfile
 
 **Prerequisites**
 
-- Znuny 7.2
+- Znuny 7.3
 
 **Installation**
 
