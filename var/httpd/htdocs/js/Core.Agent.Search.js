@@ -2,8 +2,7 @@
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: Znuny - 63d3004225d3898d2224e2a601a3063207a75c91 - var/httpd/htdocs/js/Core.Agent.Search.js
-// Copyright (C) 2012 Znuny GmbH, https://znuny.com/
+// $origin: Znuny - 468e10f227f82adcc90d51c3fc4b6bc371c656dd - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -542,7 +541,7 @@ Core.Agent.Search = (function (TargetNS) {
                             CheckSearchStringsForStopWords(function () {
                                 $('#SearchForm').submit();
                                 return false;
-                           });
+                            });
                         }
                     }
                     else { // Print and CSV should open in a new window, no waiting dialog

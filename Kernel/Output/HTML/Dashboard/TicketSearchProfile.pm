@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 # Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: znuny - 53a051ff9281fd5e4aa7f6f3478735492101c361 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - bae2fb28ba2e90d82f5f4915b2ef0274cd350138 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::Language qw(Translatable);
+use Kernel::Language              qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
 
@@ -377,6 +377,20 @@ sub Preferences {
     my @ColumnsAvailableNotEnabled;
 
     # check for default settings
+
+    $Self->{PageShownData} = {
+        5  => ' 5',
+        10 => '10',
+        15 => '15',
+        20 => '20',
+        25 => '25',
+        50 => '50',
+    };
+
+    if ( $Self->{Config}->{DefaultPageShown} && IsHashRefWithData( $Self->{Config}->{DefaultPageShown} ) ) {
+        $Self->{PageShownData} = $Self->{Config}->{DefaultPageShown};
+    }
+
     if (
         $Self->{Config}->{DefaultColumns}
         && IsHashRefWithData( $Self->{Config}->{DefaultColumns} )
@@ -442,17 +456,10 @@ sub Preferences {
 
     my @Params = (
         {
-            Desc  => Translatable('Shown Tickets'),
-            Name  => $Self->{PrefKeyShown},
-            Block => 'Option',
-            Data  => {
-                5  => ' 5',
-                10 => '10',
-                15 => '15',
-                20 => '20',
-                25 => '25',
-                50 => '50',
-            },
+            Desc        => Translatable('Shown Tickets'),
+            Name        => $Self->{PrefKeyShown},
+            Block       => 'Option',
+            Data        => $Self->{PageShownData},
             SelectedID  => $Self->{PageShown},
             Translation => 0,
         },
@@ -613,7 +620,7 @@ sub Run {
         );
     }
 
-    my $CacheKey = join '-', $Self->{Name}, $Self->{Action}, $Self->{PageShown}, $Self->{StartHit}, $Self->{UserID};
+    my $CacheKey     = join '-', $Self->{Name}, $Self->{Action}, $Self->{PageShown}, $Self->{StartHit}, $Self->{UserID};
     my $CacheColumns = join(
         ',',
         map { $_ . '=>' . $Self->{GetColumnFilterSelect}->{$_} } sort keys %{ $Self->{GetColumnFilterSelect} }
