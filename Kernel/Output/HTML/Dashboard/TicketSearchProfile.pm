@@ -20,6 +20,12 @@ package Kernel::Output::HTML::Dashboard::TicketSearchProfile;
 use strict;
 use warnings;
 
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
+use utf8;
+# ---
+
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language qw(Translatable);
 
@@ -1362,6 +1368,9 @@ sub Run {
             elsif ( $HeaderColumn eq 'CustomerUserID' ) {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User ID');
             }
+            elsif ( $HeaderColumn eq 'CreateBy' ) {
+                $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Created by');
+            }
             else {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
             }
@@ -2019,6 +2028,12 @@ sub Run {
                         UserID => $Ticket{OwnerID},
                     );
                     $DataValue = $OwnerInfo{'UserFullname'};
+                }
+                elsif ( $Column eq 'CreateBy' ) {
+                    my %CreateByInfo = $UserObject->GetUserData(
+                        UserID => $Ticket{CreateBy},
+                    );
+                    $DataValue = $CreateByInfo{'UserFullname'};
                 }
                 elsif ( $Column eq 'Responsible' ) {
 
@@ -3127,6 +3142,7 @@ sub _DefaultColumnSort {
         Queue                  => 150,
         Owner                  => 160,
         Responsible            => 161,
+        CreateBy               => 162,
         CustomerID             => 170,
         CustomerName           => 171,
         CustomerUserID         => 172,
