@@ -38,6 +38,7 @@
                         <Item Key="TicketNumber" SelectedID="2"></Item>
                         <Item Key="Lock" SelectedID="1"></Item>
                         <Item Key="Owner" SelectedID="1"></Item>
+                        <Item Key="CreateBy" SelectedID="2"></Item>
                         <Item Key="PendingTime" SelectedID="1"></Item>
                         <Item Key="Queue" SelectedID="1"></Item>
                         <Item Key="Responsible" SelectedID="1"></Item>
