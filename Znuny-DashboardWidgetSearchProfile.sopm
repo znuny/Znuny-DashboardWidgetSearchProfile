@@ -8,6 +8,7 @@
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">Displays a search profile widget in the overview.</Description>
     <Description Lang="de">Zeigt Suchvorlagen-Widget in der Übersicht an.</Description>
+    <Description Lang="hu">Egy keresési profil felületi elemet jelenít meg az áttekintőben.</Description>
     <ChangeLog Version="6.5.6" Date="2026-10-16 12:41:33 +0200">Fixed: CreateBy displays User ID instead of Full Name</ChangeLog>
     <ChangeLog Version="6.5.5" Date="2024-04-25 15:37:00 +0200">Non-system-admins that are configured "group admins" now can only select groups for search profiles among their assigned groups.</ChangeLog>
     <ChangeLog Version="6.5.4" Date="2024-02-13 11:28:36 +0100">Package setup now updates system config so that dynamic fields for the dashboard widget "SearchProfile" can be managed via AdminDynamicFieldScreenConfiguration.</ChangeLog>
