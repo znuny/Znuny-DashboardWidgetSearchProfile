@@ -2,7 +2,7 @@
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: Znuny - 468e10f227f82adcc90d51c3fc4b6bc371c656dd - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: Znuny - a7fd3311b9809d60084c043289939457f18266a4 - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -705,6 +705,59 @@ Core.Agent.Search = (function (TargetNS) {
 
     /**
      * @function
+        * @param {Boolean} AllowTicketNumberRedirect
+     * @description Executes toolbar fulltext search.
+     */
+    TargetNS.ExecuteToolbarFulltextSearch = function (AllowTicketNumberRedirect) {
+        var $ToolbarSearchForm,
+            $RedirectInput,
+            OriginalRedirectValue,
+            SearchString;
+
+        $ToolbarSearchForm = $('form[name="ToolBarSearch"]');
+        $RedirectInput = $ToolbarSearchForm.find('input[name="CheckTicketNumberAndRedirect"]');
+
+        SearchString = $('#ToolBarSearchTerm').val();
+
+        if (AllowTicketNumberRedirect === false && $RedirectInput.length) {
+            OriginalRedirectValue = $RedirectInput.val();
+            $RedirectInput.val('0');
+        }
+
+        if (!SearchString.length || !Core.Config.Get('CheckSearchStringsForStopWords')) {
+            $ToolbarSearchForm.submit();
+
+            if (AllowTicketNumberRedirect === false && $RedirectInput.length) {
+                window.setTimeout(function () {
+                    $RedirectInput.val(OriginalRedirectValue);
+                }, 0);
+            }
+
+            return;
+        }
+
+        AJAXStopWordCheck(
+            { Fulltext: SearchString },
+            function (FoundStopWords) {
+                Core.UI.Dialog.ShowAlert(
+                    Core.Language.Translate('An Error Occurred'),
+                    Core.Language.Translate('Please remove the following words from your search as they cannot be searched for:') + "\n" + FoundStopWords
+                );
+            },
+            function () {
+                $ToolbarSearchForm.submit();
+
+                if (AllowTicketNumberRedirect === false && $RedirectInput.length) {
+                    window.setTimeout(function () {
+                        $RedirectInput.val(OriginalRedirectValue);
+                    }, 0);
+                }
+            }
+        );
+    };
+
+    /**
+     * @function
      * @return nothing
      * @description Inits toolbar fulltext search.
      */
@@ -713,24 +766,9 @@ Core.Agent.Search = (function (TargetNS) {
 
         // register return key
         $('#ToolBarSearchTerm').off('keypress.FilterInput').on('keypress.FilterInput', function (Event) {
-            var SearchString;
 
             if ((Event.charCode || Event.keyCode) === 13) {
-                SearchString = $('#ToolBarSearchTerm').val();
-
-                if (!SearchString.length || !Core.Config.Get('CheckSearchStringsForStopWords')) {
-                    return true;
-                }
-
-                AJAXStopWordCheck(
-                    { Fulltext: SearchString },
-                    function (FoundStopWords) {
-                        alert(Core.Language.Translate('Please remove the following words from your search as they cannot be searched for:') + "\n" + FoundStopWords);
-                    },
-                    function () {
-                        $('form[name="ToolBarSearch"]').submit();
-                    }
-                );
+                TargetNS.ExecuteToolbarFulltextSearch(true);
 
                 return false;
             }
