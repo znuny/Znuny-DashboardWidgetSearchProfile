@@ -2,7 +2,7 @@
 // Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 // Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 // --
-// $origin: znuny - 4e84ea4bb19adae193fe08ab181211d0fc4b8a0a - var/httpd/htdocs/js/Core.Agent.Search.js
+// $origin: znuny - 57182ea58b2434b15a44687d77d8b056e6b6c5d2 - var/httpd/htdocs/js/Core.Agent.Search.js
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (GPL). If you
@@ -62,9 +62,12 @@ Core.Agent.Search = (function (TargetNS) {
      *      This function adds one attributes for search.
      */
     TargetNS.SearchAttributeAdd = function (Attribute) {
-        var $Label = $('#SearchAttributesHidden label#Label' + Attribute);
+        var $Label = $('#SearchAttributesHidden label#Label' + Attribute),
+            InputFieldUUID;
 
         if ($Label.length) {
+            InputFieldUUID = $Label.next().find(':input').attr('data-input-field-uuid');
+
             $Label.prev().clone().appendTo('#SearchInsert');
             $Label.clone().appendTo('#SearchInsert');
             $Label.next().clone().appendTo('#SearchInsert')
@@ -92,6 +95,13 @@ Core.Agent.Search = (function (TargetNS) {
 
             // Initially display dynamic fields with TreeMode = 1 correctly
             Core.UI.TreeSelection.InitDynamicFieldTreeViewRestore();
+
+            if (InputFieldUUID) {
+
+                // Note: Subscriber takes care of determining if this is
+                // really a dynamic field.
+                Core.App.Publish('Event.DynamicField.InitByInputFieldUUID', [InputFieldUUID]);
+            }
         }
 
         return false;

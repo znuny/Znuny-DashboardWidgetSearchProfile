@@ -2,7 +2,7 @@
 # Copyright (C) 2001-2021 OTRS AG, https://otrs.com/
 # Copyright (C) 2012 Znuny GmbH, https://znuny.com/
 # --
-# $origin: znuny - a74d4be2744824f52a55a3cbf6425a697a85e3a8 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
+# $origin: znuny - 7be229cefa560301e0061d4216beb936d72b9663 - Kernel/Output/HTML/Dashboard/TicketGeneric.pm
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -27,7 +27,7 @@ use utf8;
 # ---
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::Language qw(Translatable);
+use Kernel::Language              qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
 
@@ -51,6 +51,11 @@ sub new {
     # get sorting params
     for my $Item (qw(SortBy OrderBy)) {
         $Self->{$Item} = $ParamObject->GetParam( Param => $Item ) || $Param{$Item};
+    }
+
+    # Validate OrderBy - only Up and Down are valid values.
+    if ( defined $Self->{OrderBy} && $Self->{OrderBy} !~ m{\A(?:Up|Down)\z} ) {
+        $Self->{OrderBy} = undef;
     }
 
     # Get add filters param.
@@ -602,10 +607,22 @@ sub FilterContent {
 sub Run {
     my ( $Self, %Param ) = @_;
 
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
     my %SearchParams        = $Self->_SearchParamsGet(%Param);
-    my @Columns             = @{ $SearchParams{Columns} };
+    my @Columns             = @{ $SearchParams{Columns} // [] };
     my %TicketSearch        = %{ $SearchParams{TicketSearch} };
     my %TicketSearchSummary = %{ $SearchParams{TicketSearchSummary} };
+    my %Filter              = %{ $SearchParams{Filter} // {} };
+
+    # Validate SortBy against known sortable columns; undef falls through to default 'Age'.
+    if ( defined $Self->{SortBy} && !$Self->{ValidSortableColumns}->{ $Self->{SortBy} } ) {
+        $Self->{SortBy} = undef;
+    }
+
+    my @ArticleAttributes = @{ $ConfigObject->Get('DashboardBackend::TicketGeneric::ArticleAttributes') || [] };
+    my %ArticleAttributes = map  { $_ => 1 } @ArticleAttributes;
+    my @ArticleColumns    = grep { $ArticleAttributes{$_} } @Columns;
 
     # Add the additional filter to the ticket search param.
     if ( $Self->{AdditionalFilter} ) {
@@ -615,7 +632,7 @@ sub Run {
         );
     }
 
-    my $CacheKey = join '-', $Self->{Name}, $Self->{Action}, $Self->{PageShown}, $Self->{StartHit}, $Self->{UserID};
+    my $CacheKey     = join '-', $Self->{Name}, $Self->{Action}, $Self->{PageShown}, $Self->{StartHit}, $Self->{UserID};
     my $CacheColumns = join(
         ',',
         map { $_ . '=>' . $Self->{GetColumnFilterSelect}->{$_} } sort keys %{ $Self->{GetColumnFilterSelect} }
@@ -704,7 +721,10 @@ sub Run {
     my $CacheUsed = 1;
 
     # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $TicketObject  = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $ArticleObject = @ArticleColumns
+        ? $Kernel::OM->Get('Kernel::System::Ticket::Article')
+        : undef;
 
     if ( !$TicketIDs ) {
 
@@ -967,7 +987,6 @@ sub Run {
 # ---
 # Znuny-DashboardWidgetSearchProfile
 # ---
-#     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 #
 #     # show only AssignedToCustomerUser if we have the filter
 #     if ( $TicketSearchSummary{AssignedToCustomerUser} ) {
@@ -1321,26 +1340,10 @@ sub Run {
         if ( $HeaderColumn !~ m{\A DynamicField_}xms ) {
 
             $CSS = '';
-            my $Title = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
-
-            # Set title description.
-            if ( $Self->{SortBy} && $Self->{SortBy} eq $HeaderColumn ) {
-                my $TitleDesc = '';
-                if ( $TicketSearch{OrderBy} eq 'Down' ) {
-                    $CSS .= ' SortDescendingLarge';
-                    $TitleDesc = Translatable('sorted descending');
-                }
-                else {
-                    $CSS .= ' SortAscendingLarge';
-                    $TitleDesc = Translatable('sorted ascending');
-                }
-
-                $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
-                $Title .= ', ' . $TitleDesc;
-            }
 
             # translate the column name to write it in the current language
             my $TranslatedWord;
+
             if ( $HeaderColumn eq 'EscalationTime' ) {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Service Time');
             }
@@ -1368,11 +1371,34 @@ sub Run {
             elsif ( $HeaderColumn eq 'CustomerUserID' ) {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User ID');
             }
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
             elsif ( $HeaderColumn eq 'CreateBy' ) {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Created by');
             }
+# ---
             else {
                 $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($HeaderColumn);
+            }
+
+            # Use the translated word also as title.
+            my $Title = $TranslatedWord;
+
+            # Set title description.
+            if ( $Self->{SortBy} && $Self->{SortBy} eq $HeaderColumn ) {
+                my $TitleDesc = '';
+                if ( $TicketSearch{OrderBy} eq 'Down' ) {
+                    $CSS .= ' SortDescendingLarge';
+                    $TitleDesc = Translatable('sorted descending');
+                }
+                else {
+                    $CSS .= ' SortAscendingLarge';
+                    $TitleDesc = Translatable('sorted ascending');
+                }
+
+                $TitleDesc = $LayoutObject->{LanguageObject}->Translate($TitleDesc);
+                $Title .= ', ' . $TitleDesc;
             }
 
             # add surrounding container
@@ -1846,6 +1872,54 @@ sub Run {
             Silent        => 1
         );
 
+        if (@ArticleColumns) {
+            my @Articles = $ArticleObject->ArticleList(
+                TicketID   => $TicketID,
+                SenderType => 'customer',
+                OnlyLast   => 1,
+            );
+
+            if ( !@Articles ) {
+                @Articles = $ArticleObject->ArticleList(
+                    TicketID   => $TicketID,
+                    SenderType => 'agent',
+                    OnlyLast   => 1,
+                );
+            }
+
+            if ( !@Articles ) {
+                @Articles = $ArticleObject->ArticleList(
+                    TicketID => $TicketID,
+                    OnlyLast => 1,
+                );
+            }
+
+            if (@Articles) {
+                my $Article = $Articles[0];
+                my %Article = $ArticleObject->BackendForArticle( %{$Article} )->ArticleGet(
+                    %{$Article},
+                    DynamicFields => 0,
+                );
+
+                next TICKETID if !$Article{ArticleID};
+
+                my %ArticleFields = $LayoutObject->ArticleFields(
+                    TicketID  => $TicketID,
+                    ArticleID => $Article{ArticleID},
+                );
+
+                COLUMN:
+                for my $ArticleColumn (@ArticleColumns) {
+                    next COLUMN if !IsHashRefWithData( $ArticleFields{$ArticleColumn} );
+                    next COLUMN if !defined $ArticleFields{$ArticleColumn}->{Value};
+
+                    $Ticket{$ArticleColumn} = $ArticleFields{$ArticleColumn}->{Realname}
+                        // $ArticleFields{$ArticleColumn}->{Value};
+                }
+
+            }
+        }
+
         %Ticket = ( %Ticket, %{ $CustomColumns->{$TicketID} } ) if $CustomColumns->{$TicketID};
 
         next TICKETID if !%Ticket;
@@ -2029,12 +2103,16 @@ sub Run {
                     );
                     $DataValue = $OwnerInfo{'UserFullname'};
                 }
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
                 elsif ( $Column eq 'CreateBy' ) {
                     my %CreateByInfo = $UserObject->GetUserData(
                         UserID => $Ticket{CreateBy},
                     );
                     $DataValue = $CreateByInfo{'UserFullname'};
                 }
+# ---
                 elsif ( $Column eq 'Responsible' ) {
 
                     # get responsible info
@@ -2052,7 +2130,7 @@ sub Run {
                     $BlockType = 'Translatable';
                     $DataValue = $Ticket{$Column};
                 }
-                elsif ( $Column eq 'Created' || $Column eq 'Changed' ) {
+                elsif ( $Column eq 'Created' || $Column eq 'Changed' || $Column eq 'LastMention' ) {
                     $BlockType = 'Time';
                     $DataValue = $Ticket{$Column};
                 }
@@ -2157,6 +2235,7 @@ sub Run {
                         Name => 'ContentLargeTicketGenericDynamicFieldLink',
                         Data => {
                             Value                       => $ValueStrg->{Value},
+                            ValueKey                    => $Value,
                             Title                       => $ValueStrg->{Title},
                             Link                        => $ValueStrg->{Link},
                             $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
@@ -3136,13 +3215,18 @@ sub _DefaultColumnSort {
         EscalationSolutionTime => 114,
         EscalationResponseTime => 115,
         EscalationUpdateTime   => 116,
+        Sender                 => 118,
         Title                  => 120,
         State                  => 130,
         Lock                   => 140,
         Queue                  => 150,
         Owner                  => 160,
         Responsible            => 161,
+# ---
+# Znuny-DashboardWidgetSearchProfile
+# ---
         CreateBy               => 162,
+# ---
         CustomerID             => 170,
         CustomerName           => 171,
         CustomerUserID         => 172,
