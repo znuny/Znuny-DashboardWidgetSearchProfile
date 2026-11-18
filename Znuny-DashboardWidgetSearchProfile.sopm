@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package version="1.0">
     <Name>Znuny-DashboardWidgetSearchProfile</Name>
-    <Version>7.3.3</Version>
+    <Version>7.5.1</Version>
     <Framework>7.5.x</Framework>
     <Vendor>Znuny GmbH</Vendor>
     <URL>http://znuny.com/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">Displays a search profile widget in the overview.</Description>
     <Description Lang="de">Zeigt Suchvorlagen-Widget in der Übersicht an.</Description>
+    <ChangeLog Version="7.5.1" Date="2026-11-18 14:12:43 +0100">Initial release for Znuny 7.5.</ChangeLog>
     <ChangeLog Version="7.3.3" Date="2026-11-17 16:38:58 +0100">Updated Custom Files.</ChangeLog>
     <ChangeLog Version="7.3.2" Date="2026-10-16 12:55:53 +0200">Fixed: CreateBy displays User ID instead of Full Name</ChangeLog>
     <ChangeLog Version="7.3.1" Date="2025-12-05 00:09:39 +0100">Initial release for Znuny 7.3.</ChangeLog>
