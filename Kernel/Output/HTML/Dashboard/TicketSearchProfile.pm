@@ -3299,7 +3299,7 @@ sub _SearchParamsGet {
                     );
 
                     # Convert start time to local system time zone.
-                    $DateTimeObject->ToOTRSTimeZone();
+                    $DateTimeObject->ToZnunyTimeZone();
                     $CurrentSearchProfile{ $TimeType . 'TimeNewerDate' } = $DateTimeObject->ToString();
                 }
                 if (
@@ -3322,7 +3322,7 @@ sub _SearchParamsGet {
                     );
 
                     # Convert stop time to local system time zone.
-                    $DateTimeObject->ToOTRSTimeZone();
+                    $DateTimeObject->ToZnunyTimeZone();
                     $CurrentSearchProfile{ $TimeType . 'TimeOlderDate' } = $DateTimeObject->ToString();
                 }
             }
